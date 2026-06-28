@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inductor"
+version = "0.0.1"
+description = "An agent that synthesizes formal properties for RTL, runs a model checker, and iterates on counterexamples."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Satchel Hamilton" }]
+keywords = ["formal-verification", "model-checking", "rtl", "yosys", "symbiyosys", "llm"]
+
+dependencies = [
+    "anthropic>=0.69,<1.0",   # property synthesis + CEX classification
+    "pydantic>=2.7,<3.0",     # structured-output schemas
+    "vcdvcd>=2.3",            # human-facing VCD waveform reading
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[project.scripts]
+inductor = "inductor.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/satchelhamilton/inductor"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["inductor"]
+strict = true
+mypy_path = "src"

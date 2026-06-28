@@ -1,0 +1,43 @@
+# CI — lint, typecheck, and test on every push / PR.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Typecheck
+        run: mypy
+
+      - name: Test
+        run: pytest
+
+  # Integration tests that shell out to SymbiYosys need the open formal toolchain.
+  # Uncomment once M1 lands `sby`-backed tests (they skip cleanly without it):
+  #
+  # formal:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with: { python-version: "3.11" }
+  #     - uses: YosysHQ/setup-oss-cad-suite@v3
+  #       with: { github-token: ${{ secrets.GITHUB_TOKEN }} }
+  #     - run: pip install -e ".[dev]"
+  #     - run: pytest -m integration

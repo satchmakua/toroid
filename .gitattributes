@@ -1,2 +1,19 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Keep shell scripts LF even on Windows checkouts
+*.sh text eol=lf
+
+# RTL and formal sources are text
+*.v   text
+*.sv  text
+*.sby text
+
+# Treat common binary assets as binary (no EOL munging, no bad diffs)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
