@@ -15,21 +15,23 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from inductor import __version__
-from inductor.adapters import toolchain_status
 from inductor.domain.interface import ModuleInterface, Port
 from inductor.domain.policy import DEFAULT_BMC_DEPTH, DEFAULT_MAX_REFINE, decide_verdict
 from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.domain.verdicts import PropertyResult, RawOutcome
+from inductor.domain.verdicts import PropertyResult, RawOutcome, Verdict
 from inductor.pipeline.report import render_report
 from inductor.render.checker import render_wrapper
 
-_TOOLCHAIN_HELP = (
-    "The open formal toolchain (yosys + sby) was not found on PATH.\n"
-    "Install the OSS CAD Suite: https://github.com/YosysHQ/oss-cad-suite-build\n"
-    "On Windows, run Inductor inside WSL2 (Ubuntu) with the suite on PATH.\n"
-    "Meanwhile, try `inductor demo` — it runs fully offline."
+_NO_YOSYS_HELP = (
+    "No Yosys found. Either:\n"
+    "  • `pip install yowasp-yosys`  (lightweight, runs the built-in `sat` backend; "
+    "works on Windows), or\n"
+    "  • install the full OSS CAD Suite for the SymbiYosys + Bitwuzla backend "
+    "(https://github.com/YosysHQ/oss-cad-suite-build; WSL2 on Windows).\n"
+    "Meanwhile, `inductor demo` runs fully offline."
 )
 
 
@@ -108,35 +110,80 @@ def _cmd_version(_: argparse.Namespace) -> int:
     return 0
 
 
-def _require_toolchain() -> int | None:
-    status = toolchain_status()
-    if status.ready:
-        return None
-    missing = ", ".join(status.missing())
-    print(f"error: missing tool(s): {missing}\n", file=sys.stderr)
-    print(_TOOLCHAIN_HELP, file=sys.stderr)
-    return 2
-
-
 def _cmd_verify(args: argparse.Namespace) -> int:
-    rc = _require_toolchain()
-    if rc is not None:
-        return rc
-    # The real pipeline (ingest -> synth -> render -> discharge -> refine -> report)
-    # is wired milestone by milestone; see ROADMAP.md (M1+).
-    print(
-        f"verify: toolchain present — pipeline for {args.rtl} (top={args.top}, "
-        f"depth={args.depth}) lands in M1+.",
-        file=sys.stderr,
+    from inductor.adapters import toolchain_status
+    from inductor.adapters.sby import SbyCli, SbyJobRunner
+    from inductor.adapters.yosys import YosysCli, find_yosys
+    from inductor.adapters.yosys_sat import YosysSatCli
+    from inductor.loaders import load_property_set
+    from inductor.pipeline.discharge import discharge
+
+    yosys_exe = find_yosys()
+    if yosys_exe is None:
+        print(f"error: {_NO_YOSYS_HELP}", file=sys.stderr)
+        return 2
+    if not args.no_llm:
+        print(
+            "error: LLM synthesis lands in M2. For now pass --no-llm with a property "
+            "file (e.g. designs/counter.props.json).",
+            file=sys.stderr,
+        )
+        return 2
+
+    backend = args.backend
+    if backend == "auto":
+        backend = "sby" if toolchain_status().sby else "yosys-sat"
+    if backend == "sby" and not toolchain_status().sby:
+        print("error: --backend sby needs SymbiYosys (sby) on PATH.", file=sys.stderr)
+        return 2
+
+    rtl = [Path(r) for r in args.rtl]
+    dut = rtl[0]
+    props_path = Path(args.props) if args.props else dut.with_name(f"{args.top}.props.json")
+    if not props_path.exists():
+        print(f"error: property file not found: {props_path}", file=sys.stderr)
+        print("Pass one with --props, or place <top>.props.json next to the RTL.", file=sys.stderr)
+        return 2
+
+    yosys = YosysCli(executable=yosys_exe)
+    runner: SbyJobRunner = SbyCli() if backend == "sby" else YosysSatCli(executable=yosys_exe)
+
+    interface = yosys.extract_interface(rtl, args.top)
+    pset = load_property_set(props_path)
+    workdir = Path(args.workdir) if args.workdir else dut.parent / "_build" / args.top
+    results = discharge(
+        interface, pset, duts=rtl, yosys=yosys, runner=runner,
+        workdir=workdir, depth=args.depth, run_pdr=(backend == "sby"),
     )
-    raise NotImplementedError("The verification pipeline lands in M1 (see ROADMAP.md).")
+
+    print(f"# backend: {backend}", file=sys.stderr)
+    report = render_report(interface, results)
+    if args.report:
+        Path(args.report).write_text(report, encoding="utf-8")
+        print(f"wrote report to {args.report}")
+    else:
+        print(report)
+
+    bad = any(r.verdict in (Verdict.FALSIFIED, Verdict.ERROR) for r in results)
+    return 1 if bad else 0
 
 
 def _cmd_extract(args: argparse.Namespace) -> int:
-    rc = _require_toolchain()
-    if rc is not None:
-        return rc
-    raise NotImplementedError("Interface extraction lands in M1 (see ROADMAP.md).")
+    from inductor.adapters.yosys import YosysCli, find_yosys
+
+    yosys_exe = find_yosys()
+    if yosys_exe is None:
+        print(f"error: {_NO_YOSYS_HELP}", file=sys.stderr)
+        return 2
+
+    rtl = [Path(r) for r in args.rtl]
+    interface = YosysCli(executable=yosys_exe).extract_interface(rtl, args.top)
+    print(f"module {interface.top}  (clock={interface.clock}, reset={interface.reset})")
+    for p in interface.ports:
+        tags = "".join(t for t, on in (("clk", p.is_clock), ("rst", p.is_reset)) if on)
+        width = f"[{p.width - 1}:0]" if p.is_vector else "     "
+        print(f"  {p.direction:6} {width} {p.name}  {tags}")
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -151,8 +198,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument(
         "--max-refine", type=int, default=DEFAULT_MAX_REFINE, help="CEX refinement cap"
     )
-    p_verify.add_argument("--engine", default="bitwuzla", help="solver engine")
+    p_verify.add_argument("--engine", default="bitwuzla", help="solver engine (sby backend)")
+    p_verify.add_argument(
+        "--backend", choices=("auto", "sby", "yosys-sat"), default="auto",
+        help="discharge backend: 'sby' (SymbiYosys+Bitwuzla, needs OSS CAD Suite) or "
+        "'yosys-sat' (built-in minisat, Yosys-only). auto picks sby if available.",
+    )
     p_verify.add_argument("--no-llm", action="store_true", help="use a hand-written property file")
+    p_verify.add_argument("--props", help="property file (JSON); default: <top>.props.json")
+    p_verify.add_argument("--workdir", help="working dir for sby jobs")
     p_verify.add_argument("--report", help="write the report to this path")
     p_verify.set_defaults(func=_cmd_verify)
 

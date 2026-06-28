@@ -19,10 +19,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Lightweight Yosys-only backend (built-in `sat`): runs the full flow with no
+# SymbiYosys / external solver, including on Windows. The sby+Bitwuzla backend
+# uses the OSS CAD Suite instead (not a pip dependency).
+wasm = ["yowasp-yosys>=0.45"]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "yowasp-yosys>=0.45",
 ]
 
 [project.scripts]
@@ -36,7 +41,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+# Unit tests run by default; integration tests (which shell out to a real Yosys /
+# SymbiYosys) are opt-in via `pytest -m integration` so the default run stays fast.
+addopts = "-ra -m 'not integration'"
+markers = [
+    "integration: end-to-end tests that shell out to a real Yosys / SymbiYosys",
+]
 
 [tool.ruff]
 line-length = 100

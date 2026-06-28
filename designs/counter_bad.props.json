@@ -1,0 +1,21 @@
+{
+  "_comment": "A deliberately over-strong property to demonstrate FALSIFIED + a counterexample waveform on the (correct) counter. PB asserts the count never exceeds 10, but the saturating counter reaches 15.",
+  "properties": [
+    {
+      "pid": "PB",
+      "kind": "assert",
+      "summary": "count never exceeds 10 (intentionally false)",
+      "expr": "count <= 4'd10",
+      "rationale": "Demo: the counter saturates at 15, so this must be falsified with a waveform.",
+      "origin": "human"
+    },
+    {
+      "pid": "PBcov",
+      "kind": "cover",
+      "summary": "the counter can reach 15",
+      "expr": "count == 4'd15",
+      "rationale": "Reachability witness.",
+      "origin": "human"
+    }
+  ]
+}

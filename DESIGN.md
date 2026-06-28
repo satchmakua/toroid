@@ -299,6 +299,8 @@ class SbyAdapter(Protocol):
 
 The adapter maps SymbiYosys outcomes onto the §4.4 taxonomy: `cover` reachable + `prove`/`pdr` PASS → `PROVEN`; `bmc` PASS only → `BOUNDED_PASS`; FAIL → `FALSIFIED` (+ traces); `cover` UNREACHABLE on a passing assert → `VACUOUS`; UNKNOWN/timeout → `INCONCLUSIVE`.
 
+> **Two backends (see ADR-0003).** `discharge` is backend-agnostic (it drives a `SbyJobRunner`). Backend 1 is the spec'd **SymbiYosys + Bitwuzla** (`adapters/sby.py`, OSS CAD Suite). Backend 2 is **`adapters/yosys_sat.py`** — Yosys's built-in `sat` command (internal minisat), which runs BMC + k-induction with **no external solver and no SymbiYosys**, so the full proof-or-counterexample flow works anywhere Yosys is available (incl. Windows via `pip install yowasp-yosys`). Trade-off: yosys-sat doesn't run `cover`, so its verdicts carry no vacuity guard (`cover_reachable` stays `None`). Select with `--backend {auto,sby,yosys-sat}`.
+
 ### 6.4 Counterexample loop (`pipeline/refine.py` + `adapters/witness.py`)
 
 Parse the `.yw` witness (Yosys `ywio`) into a structured per-cycle `Trace`; the LLM narrates it cycle-by-cycle and returns a `CexDiagnosis` classifying the cause and proposing a patch. The **policy layer decides whether to apply it** — and refuses patches that would weaken a property into vacuity.

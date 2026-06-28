@@ -1,0 +1,29 @@
+{
+  "_comment": "Hand-written property set for designs/counter.v (the --no-llm path, M1). Expressions use the supported open-Yosys subset only (see DESIGN.md §4.1).",
+  "properties": [
+    {
+      "pid": "P1",
+      "kind": "assert",
+      "summary": "count never exceeds its max (no overflow)",
+      "expr": "count <= 4'd15",
+      "rationale": "4-bit saturating counter must stay within [0, 15].",
+      "origin": "human"
+    },
+    {
+      "pid": "P2",
+      "kind": "assert",
+      "summary": "when disabled and out of reset, count holds",
+      "expr": "$initstate || $past(rst) || $past(en) || count == $past(count)",
+      "rationale": "en low => the value is retained cycle-to-cycle.",
+      "origin": "human"
+    },
+    {
+      "pid": "P3",
+      "kind": "cover",
+      "summary": "the counter can actually reach its max (anti-vacuity)",
+      "expr": "count == 4'd15",
+      "rationale": "If unreachable, P1 would pass vacuously.",
+      "origin": "human"
+    }
+  ]
+}

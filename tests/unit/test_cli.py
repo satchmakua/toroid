@@ -7,7 +7,6 @@ from __future__ import annotations
 import pytest
 
 from inductor import __version__
-from inductor.adapters import toolchain_status
 from inductor.cli import main
 
 
@@ -26,11 +25,11 @@ def test_demo_runs_offline_and_renders_wrapper_and_report(
     assert "$anyseq" in out
 
 
-def test_verify_without_toolchain_exits_2_with_guidance(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    if toolchain_status().ready:
-        pytest.skip("toolchain present; the missing-tool path is not exercised here")
+def test_verify_without_no_llm_flag_exits_2(capsys: pytest.CaptureFixture[str]) -> None:
+    # Without --no-llm (and with no LLM backend yet), verify refuses with exit 2.
+    # If no Yosys is found at all, it also exits 2 (with install guidance) — either
+    # way the command must not crash and must point the user somewhere useful.
     rc = main(["verify", "designs/counter.v", "--top", "counter"])
+    err = capsys.readouterr().err.lower()
     assert rc == 2
-    assert "oss-cad-suite" in capsys.readouterr().err.lower()
+    assert "m2" in err or "yosys" in err

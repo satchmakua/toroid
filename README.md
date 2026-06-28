@@ -14,33 +14,39 @@ Inductor synthesizes "never overflow / never underflow," gets a counterexample
 waveform, narrates the exact failing cycle, pinpoints the bug — then proves the
 property holds on the fixed version.
 
-**Status:** _scaffolded — walking skeleton runs offline._ See [ROADMAP.md](ROADMAP.md)
-for the plan.
+**Status:** M1 done — verifies real RTL end-to-end (proven-or-counterexample). See
+[ROADMAP.md](ROADMAP.md) for the plan.
 
 ---
 
 ## Run it
 
-**Prerequisites:**
+**Prerequisites:** **Python ≥ 3.11** (check: `python --version`). For the actual
+verification you need a model checker — pick one:
 
-- **Python ≥ 3.11** (check: `python --version`).
-- **OSS CAD Suite** (Yosys + SymbiYosys + Bitwuzla) on PATH for the *real*
-  verification flow — https://github.com/YosysHQ/oss-cad-suite-build. The stack is
-  Linux-native; **on Windows, run inside WSL2**. The offline `demo` and the test
-  suite need none of this.
+- **Lightweight (works on Windows, no admin):** `pip install yowasp-yosys` — Yosys as
+  WebAssembly. Drives the built-in `sat` backend (internal minisat, no external
+  solver). This is what the dev install (`.[dev]`) pulls in.
+- **Full stack:** the **OSS CAD Suite** (Yosys + SymbiYosys + Bitwuzla) on PATH —
+  https://github.com/YosysHQ/oss-cad-suite-build — for the `sby` backend. Linux-native;
+  **on Windows use WSL2**.
+
+The offline `demo` and the unit tests need neither.
 
 ```bash
 python -m venv .venv && source .venv/Scripts/activate   # Windows Git Bash
                                                         # (Linux/macOS: .venv/bin/activate)
-pip install -e ".[dev]"     # once
+pip install -e ".[dev]"     # once (includes yowasp-yosys)
+
 inductor demo               # offline showcase: render a wrapper + a sample report
-pytest                      # tests (all green offline)
-```
+# Verify real RTL (run from the repo root; yowasp-yosys is sandboxed to the CWD):
+inductor verify designs/counter.v --spec designs/counter.md --top counter --no-llm
+# → P1, P2 ✅ PROVEN.  Try the over-strong property to see a counterexample:
+inductor verify designs/counter.v --top counter --no-llm --props designs/counter_bad.props.json
+# → PB ❌ FALSIFIED, with a waveform written under designs/_build/.
 
-Once the toolchain is installed:
-
-```bash
-inductor verify designs/counter.v --spec designs/counter.md --top counter --depth 20
+pytest                      # unit tests (fast, offline)
+pytest -m integration       # runs a real proof via Yosys (needs a Yosys on PATH)
 ```
 
 ### Commands
@@ -48,9 +54,10 @@ inductor verify designs/counter.v --spec designs/counter.md --top counter --dept
 | Command | What it does |
 |---|---|
 | `inductor demo` | Offline: render the formal wrapper + a sample verdict report. |
-| `inductor verify <rtl…> --top <name>` | Synthesize + discharge properties (needs the toolchain). |
+| `inductor verify <rtl…> --top <name> --no-llm` | Discharge a hand-written property file against the RTL. |
+| `inductor verify … --backend {auto,sby,yosys-sat}` | Pick the engine (auto: sby if present, else yosys-sat). |
 | `inductor extract <rtl…> --top <name>` | Print the extracted interface model (debug). |
-| `pytest` | Run the test suite. |
+| `pytest` / `pytest -m integration` | Unit tests / live end-to-end tests. |
 | `ruff check . && mypy` | Lint + typecheck. |
 
 ---

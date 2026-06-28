@@ -30,15 +30,18 @@ The milestone checklist.
 
 ## Phase 1 — The harness (ground truth)
 
-- [ ] **M1 — Verify real RTL with a hand-written property (`--no-llm`).** Wire
-  `ingest → render → sby → verdict → report` end-to-end on `designs/counter.v` with a
-  checked-in property file (no LLM yet). Implement `adapters/yosys.py`
-  (`write_json` interface extraction + `read_verilog -formal` compile gate) and
-  `adapters/sby.py` (build `.sby`, run, parse PASS/FAIL/UNKNOWN + depth, collect
-  `.yw`/`.vcd`). Map outcomes through `domain/policy.py`. _(= DESIGN M0.)_
-  **Test (needs toolchain):** `inductor verify designs/counter.v --top counter
-  --no-llm` reports the counter's invariants as PROVEN/BOUNDED-PASS; flip a property
-  to something false and it reports FALSIFIED with a `.vcd`.
+- [x] **M1 — Verify real RTL with a hand-written property (`--no-llm`).** Wired
+  `ingest → render → discharge → report` end-to-end on `designs/counter.v` with a
+  checked-in property file. Two discharge backends: **`yosys-sat`** (Yosys built-in
+  minisat — no external solver, runs via `pip install yowasp-yosys`) and **`sby`**
+  (SymbiYosys + Bitwuzla, OSS CAD Suite). _(= DESIGN M0.)_
+  **Test:** `inductor verify designs/counter.v --top counter --no-llm` reports the
+  invariants as PROVEN; with `--props designs/counter_bad.props.json` it reports
+  FALSIFIED with a `.vcd`. ✅ **Confirmed live** (yosys-sat via yowasp, Windows):
+  `pytest -m integration` green; CLI reports P1/P2 PROVEN and the bad property
+  FALSIFIED with a real waveform.
+  _Caveat: the `sby` + Bitwuzla backend is code-complete and unit-tested but its
+  live run still awaits an OSS CAD Suite install (its integration tests skip)._
 
 ## Phase 2 — Property synthesis (the credibility milestone)
 
