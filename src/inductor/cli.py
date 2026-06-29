@@ -13,6 +13,7 @@ when it is missing. See DESIGN.md §6.6 and ROADMAP.md.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -115,19 +116,11 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     from inductor.adapters.sby import SbyCli, SbyJobRunner
     from inductor.adapters.yosys import YosysCli, find_yosys
     from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.loaders import load_property_set
     from inductor.pipeline.discharge import discharge
 
     yosys_exe = find_yosys()
     if yosys_exe is None:
         print(f"error: {_NO_YOSYS_HELP}", file=sys.stderr)
-        return 2
-    if not args.no_llm:
-        print(
-            "error: LLM synthesis lands in M2. For now pass --no-llm with a property "
-            "file (e.g. designs/counter.props.json).",
-            file=sys.stderr,
-        )
         return 2
 
     backend = args.backend
@@ -139,18 +132,51 @@ def _cmd_verify(args: argparse.Namespace) -> int:
 
     rtl = [Path(r) for r in args.rtl]
     dut = rtl[0]
-    props_path = Path(args.props) if args.props else dut.with_name(f"{args.top}.props.json")
-    if not props_path.exists():
-        print(f"error: property file not found: {props_path}", file=sys.stderr)
-        print("Pass one with --props, or place <top>.props.json next to the RTL.", file=sys.stderr)
-        return 2
-
-    yosys = YosysCli(executable=yosys_exe)
-    runner: SbyJobRunner = SbyCli() if backend == "sby" else YosysSatCli(executable=yosys_exe)
-
-    interface = yosys.extract_interface(rtl, args.top)
-    pset = load_property_set(props_path)
     workdir = Path(args.workdir) if args.workdir else dut.parent / "_build" / args.top
+    yosys = YosysCli(executable=yosys_exe)
+    interface = yosys.extract_interface(rtl, args.top)
+
+    # Obtain the property set — hand-written (--no-llm) or LLM-synthesized.
+    if args.no_llm:
+        from inductor.loaders import load_property_set
+
+        props_path = Path(args.props) if args.props else dut.with_name(f"{args.top}.props.json")
+        if not props_path.exists():
+            print(f"error: property file not found: {props_path}", file=sys.stderr)
+            print("Pass --props, or place <top>.props.json next to the RTL.", file=sys.stderr)
+            return 2
+        pset = load_property_set(props_path)
+    else:
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            print(
+                "error: LLM synthesis needs ANTHROPIC_API_KEY (or use --no-llm with a "
+                "property file). Get a key at https://console.anthropic.com/.",
+                file=sys.stderr,
+            )
+            return 2
+        from inductor.adapters.llm import ClaudeAdapter
+        from inductor.pipeline.synth import synthesize_properties
+
+        spec = Path(args.spec).read_text(encoding="utf-8") if args.spec else ""
+        synth = synthesize_properties(
+            interface, spec, llm=ClaudeAdapter(), yosys=yosys, duts=rtl,
+            workdir=workdir, max_repairs=args.max_repairs,
+        )
+        print(
+            f"# synthesized {len(synth.pset.properties)} properties "
+            f"in {synth.attempts} attempt(s)",
+            file=sys.stderr,
+        )
+        if not synth.compiled:
+            print(
+                f"error: could not synthesize compiling properties after "
+                f"{synth.attempts} attempt(s):\n{synth.errors}",
+                file=sys.stderr,
+            )
+            return 1
+        pset = synth.pset
+
+    runner: SbyJobRunner = SbyCli() if backend == "sby" else YosysSatCli(executable=yosys_exe)
     results = discharge(
         interface, pset, duts=rtl, yosys=yosys, runner=runner,
         workdir=workdir, depth=args.depth, run_pdr=(backend == "sby"),
@@ -197,6 +223,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument("--depth", type=int, default=DEFAULT_BMC_DEPTH, help="BMC depth")
     p_verify.add_argument(
         "--max-refine", type=int, default=DEFAULT_MAX_REFINE, help="CEX refinement cap"
+    )
+    p_verify.add_argument(
+        "--max-repairs", type=int, default=3, help="LLM synthesis repair attempts"
     )
     p_verify.add_argument("--engine", default="bitwuzla", help="solver engine (sby backend)")
     p_verify.add_argument(

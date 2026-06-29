@@ -25,11 +25,14 @@ def test_demo_runs_offline_and_renders_wrapper_and_report(
     assert "$anyseq" in out
 
 
-def test_verify_without_no_llm_flag_exits_2(capsys: pytest.CaptureFixture[str]) -> None:
-    # Without --no-llm (and with no LLM backend yet), verify refuses with exit 2.
-    # If no Yosys is found at all, it also exits 2 (with install guidance) — either
-    # way the command must not crash and must point the user somewhere useful.
+def test_verify_llm_path_without_api_key_exits_2(capsys: pytest.CaptureFixture[str]) -> None:
+    # The LLM path (no --no-llm) needs ANTHROPIC_API_KEY; without it (or without any
+    # Yosys), verify must exit 2 with useful guidance rather than crashing.
+    import os
+
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        pytest.skip("API key present; the missing-key path is not exercised here")
     rc = main(["verify", "designs/counter.v", "--top", "counter"])
     err = capsys.readouterr().err.lower()
     assert rc == 2
-    assert "m2" in err or "yosys" in err
+    assert "anthropic_api_key" in err or "yosys" in err

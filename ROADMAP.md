@@ -45,13 +45,19 @@ The milestone checklist.
 
 ## Phase 2 — Property synthesis (the credibility milestone)
 
-- [ ] **M2 — LLM synthesizes properties from interface + spec.** Implement
-  `adapters/llm.py` synthesis (Claude, structured outputs) and the compile-gate
-  repair loop; enforce the anti-vacuity invariant (every assert has a reachable
-  cover). Discharge and report. _(= DESIGN M1.)_
+- [ ] **M2 — LLM synthesizes properties from interface + spec.** `adapters/llm.py`
+  synthesis (Claude, structured outputs / Pydantic) + `pipeline/synth.py` compile-gate
+  + anti-vacuity **repair loop** (feeds Yosys diagnostics back to the model, up to
+  `--max-repairs`). Wired into `verify` (drop `--no-llm`). _(= DESIGN M1.)_
   **Test:** `inductor verify designs/counter.v --spec designs/counter.md --top
   counter` synthesizes properties that compile and discharge; the report shows real
   verdicts with provenance.
+  _Status: pipeline **built and verified live with a fake LLM** — synth →
+  compile-gate (real Yosys) → discharge (real yosys-sat) → report all proven on the
+  counter (`test_synth_pipeline`). The real Claude call is code-complete but
+  **gated on `ANTHROPIC_API_KEY`** (none in the dev env) — set a key and run
+  `pytest -m integration` (runs `test_synth_live_with_claude`) or
+  `inductor verify … --spec …`, then tick this box._
 
 ## Phase 3 — Close the loop
 
