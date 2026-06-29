@@ -102,6 +102,35 @@ def _demo_results() -> list[PropertyResult]:
     ]
 
 
+def _cmd_equiv(args: argparse.Namespace) -> int:
+    from inductor.adapters.yosys import YosysCli, find_yosys
+    from inductor.adapters.yosys_sat import YosysSatCli
+    from inductor.pipeline.equiv import check_equivalence
+
+    yosys_exe = find_yosys()
+    if yosys_exe is None:
+        print(f"error: {_NO_YOSYS_HELP}", file=sys.stderr)
+        return 2
+
+    spec, impl = Path(args.spec), Path(args.impl)
+    workdir = (
+        Path(args.workdir) if args.workdir
+        else spec.parent / "_build" / f"equiv_{args.top_a}_{args.top_b}"
+    )
+    result = check_equivalence(
+        spec, args.top_a, impl, args.top_b,
+        yosys=YosysCli(executable=yosys_exe), runner=YosysSatCli(executable=yosys_exe),
+        workdir=workdir, depth=args.depth,
+    )
+    report = render_report(ModuleInterface(top=f"{args.top_a} vs {args.top_b}", ports=()), [result])
+    if args.report:
+        Path(args.report).write_text(report, encoding="utf-8")
+        print(f"wrote report to {args.report}")
+    else:
+        print(report)
+    return 1 if result.verdict in (Verdict.FALSIFIED, Verdict.ERROR) else 0
+
+
 def _cmd_demo(_: argparse.Namespace) -> int:
     iface = _demo_interface()
     pset = _demo_property_set()
@@ -312,6 +341,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_extract.add_argument("rtl", nargs="+", help="RTL source file(s)")
     p_extract.add_argument("--top", required=True, help="top module name")
     p_extract.set_defaults(func=_cmd_extract)
+
+    p_equiv = sub.add_parser(
+        "equiv", help="prove two designs equivalent (or find a counterexample)"
+    )
+    p_equiv.add_argument("spec", help="first RTL file")
+    p_equiv.add_argument("impl", help="second RTL file")
+    p_equiv.add_argument("--top-a", required=True, help="top module in the first file")
+    p_equiv.add_argument("--top-b", required=True, help="top module in the second file")
+    p_equiv.add_argument("--depth", type=int, default=DEFAULT_BMC_DEPTH, help="BMC depth")
+    p_equiv.add_argument("--workdir", help="working dir for sby jobs")
+    p_equiv.add_argument("--report", help="write the report to this path")
+    p_equiv.set_defaults(func=_cmd_equiv)
 
     p_demo = sub.add_parser("demo", help="offline showcase: render a wrapper + a sample report")
     p_demo.set_defaults(func=_cmd_demo)

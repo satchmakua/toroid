@@ -14,8 +14,8 @@ Inductor synthesizes "never overflow / never underflow," gets a counterexample
 waveform, narrates the exact failing cycle, pinpoints the bug — then proves the
 property holds on the fixed version.
 
-**Status:** M1–M4 built — verifies real RTL end-to-end and catches an injected FIFO
-bug, live. See [ROADMAP.md](ROADMAP.md) for the plan.
+**Status:** M1–M5 built — verifies real RTL end-to-end, catches an injected FIFO bug,
+and checks RTL-to-RTL equivalence, all live. See [ROADMAP.md](ROADMAP.md) for the plan.
 
 ---
 
@@ -63,6 +63,10 @@ inductor verify designs/fifo_buggy.v --top fifo --no-llm --props designs/fifo.pr
 # Benchmarks (charts need the `bench` extra: pip install -e ".[bench]"):
 python -m benchmarks.bugcatch          # per-design verdicts + bug-catch chart
 python -m benchmarks.depth_vs_time     # bounded-proof time vs BMC depth
+
+# RTL-to-RTL equivalence:
+inductor equiv designs/max2.v designs/max2_alt.v    --top-a max2 --top-b max2_alt     # ✅ PROVEN
+inductor equiv designs/max2.v designs/max2_min_bug.v --top-a max2 --top-b max2_min_bug # ❌ distinguishing input
 ```
 
 ### Commands
@@ -72,6 +76,7 @@ python -m benchmarks.depth_vs_time     # bounded-proof time vs BMC depth
 | `inductor demo` | Offline: render the formal wrapper + a sample verdict report. |
 | `inductor verify <rtl…> --top <name> --no-llm` | Discharge a hand-written property file against the RTL. |
 | `inductor verify … --backend {auto,sby,yosys-sat}` | Pick the engine (auto: sby if present, else yosys-sat). |
+| `inductor equiv <a.v> <b.v> --top-a A --top-b B` | Prove two designs equivalent, or find a distinguishing input. |
 | `inductor extract <rtl…> --top <name>` | Print the extracted interface model (debug). |
 | `pytest` / `pytest -m integration` | Unit tests / live end-to-end tests. |
 | `ruff check . && mypy` | Lint + typecheck. |

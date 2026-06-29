@@ -92,10 +92,18 @@ The milestone checklist.
   reset/`assume` cells (legacy `sat` limitation — see ADR-0004). Temporal overflow
   safety (needs reset) and an arbiter/FSM gallery are deferred to the sby backend._
 
-- [ ] **M5 (stretch) — Equivalence + protocols.** RTL-to-RTL equivalence (miter +
-  Yosys `equiv`/`miter`) and an AXI-lite handshake property suite. _(= DESIGN M4.)_
-  **Test:** two equivalent counters prove equivalent; a deliberately divergent pair
-  produces a distinguishing trace.
+- [x] **M5 (stretch) — RTL-to-RTL equivalence.** `render/equiv.py` (a miter: shared
+  symbolic inputs, both DUTs, assert outputs equal) + `pipeline/equiv.py`
+  (`check_equivalence`, port-compatibility check) + `inductor equiv` CLI. Designs:
+  `max2.v` (spec), `max2_alt.v` (equivalent), `max2_min_bug.v` (impostor). _(= DESIGN M4.)_
+  **Test:** equivalent pair proves; divergent pair produces a distinguishing input.
+  ✅ **Confirmed live** (yosys-sat): `max2 ≡ max2_alt` PROVEN; `max2` vs
+  `max2_min_bug` FALSIFIED with a distinguishing input (a=4,b=2 → 4 vs 2). Unit +
+  live integration green.
+  _Scope note: combinational equivalence is assumption-free (shared inputs are
+  structural), so it runs on yosys-sat. Sequential equivalence with differing reset
+  states, and an AXI-lite handshake property suite, need the sby backend (assumes;
+  ADR-0004) — deferred._
 
 ---
 
