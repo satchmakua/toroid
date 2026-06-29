@@ -1,30 +1,31 @@
-"""Witness adapter: parse the Yosys `.yw` witness (structured JSONL) into a
-per-cycle `Trace` for counterexample narration; VCD is kept only for human display.
-See DESIGN.md §6.4. Real parsing lands in M3 (the counterexample loop).
+"""Witness parsing for the SymbiYosys backend (`.yw` / VCD → `Trace`). See
+DESIGN.md §6.4.
+
+The structured `Trace` type lives in `domain/trace.py`. The **yosys-sat** backend
+parses Yosys's `sat` model table directly (`adapters/yosys_sat.parse_sat_model`,
+the path verified live). This module is the home for the SymbiYosys witness
+formats; a full `.yw` (Yosys `ywio`) parser lands with the live sby backend.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
 
+from inductor.domain.trace import Trace
 
-@dataclass(frozen=True, slots=True)
-class Trace:
-    signals: tuple[str, ...]
-    cycles: tuple[dict[str, int], ...]  # cycle -> {signal: value}
-    failing_cycle: int = -1
-    vcd: Path | None = None  # companion human waveform
+__all__ = ["Trace", "WitnessParser", "parse_vcd"]
 
 
-class WitnessAdapter(Protocol):
-    def parse_yw(self, yw: Path) -> Trace: ...
+class WitnessParser(Protocol):
+    def parse(self, path: Path, signal_names: Sequence[str]) -> Trace: ...
 
 
-@dataclass(frozen=True, slots=True)
-class YwWitness:
-    """Real `.yw` parser (uses Yosys' `ywio`). Implemented in M3."""
-
-    def parse_yw(self, yw: Path) -> Trace:
-        raise NotImplementedError(".yw witness parsing lands in M3 (see ROADMAP.md).")
+def parse_vcd(path: Path, signal_names: Sequence[str]) -> Trace:
+    """Parse a VCD counterexample (vcdvcd) into a Trace. Implemented with the live
+    sby backend; the yosys-sat backend uses the model-table parser instead."""
+    raise NotImplementedError(
+        "VCD/.yw witness parsing lands with the SymbiYosys backend; the yosys-sat "
+        "backend parses the sat model table (yosys_sat.parse_sat_model)."
+    )

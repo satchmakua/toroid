@@ -50,7 +50,9 @@ def render_report(interface: ModuleInterface, results: Sequence[PropertyResult])
                 lines.append(f"- waveform: `{r.trace_vcd.as_posix()}`")
             if r.detail:
                 lines.append("")
+                lines.append("```")
                 lines.append(r.detail)
+                lines.append("```")
 
     lines.append("")
     lines.append(

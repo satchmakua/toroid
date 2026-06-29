@@ -5,7 +5,7 @@ mapping from per-mode sby outcomes to the verdict taxonomy without any toolchain
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 from pathlib import Path
 
@@ -13,6 +13,7 @@ from inductor.adapters.sby import SbyJob, SbyRunResult
 from inductor.adapters.yosys import CompileResult
 from inductor.domain.interface import ModuleInterface, Port
 from inductor.domain.properties import Property, PropertyKind, PropertySet
+from inductor.domain.trace import Trace
 from inductor.domain.verdicts import PropertyResult, Verdict
 from inductor.pipeline.discharge import discharge
 
@@ -65,6 +66,9 @@ class FakeSby:
         # Real adapters set the result's engine from the job; mirror that so the
         # report's engine attribution can be asserted.
         return replace(self.fn(key, job.name), engine=job.engine)
+
+    def parse_trace(self, result: SbyRunResult, signal_names: Sequence[str]) -> Trace | None:
+        return None
 
 
 def _r(status: str, **kw: object) -> SbyRunResult:

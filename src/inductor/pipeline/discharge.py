@@ -22,6 +22,7 @@ from inductor.adapters.yosys import YosysAdapter
 from inductor.domain.interface import ModuleInterface
 from inductor.domain.policy import decide_verdict
 from inductor.domain.properties import Property, PropertySet
+from inductor.domain.trace import summarize_trace
 from inductor.domain.verdicts import PropertyResult, RawOutcome, Verdict
 from inductor.render.checker import render_wrapper
 
@@ -68,23 +69,16 @@ def discharge(
         ]
 
     # 2) Reachability: one cover run over the set's covers (anti-vacuity witness).
-    #    Tri-state: pass -> reachable, fail -> unreachable, anything else -> unchecked
-    #    (None, so it never falsely trips the vacuity guard).
-    cover_reachable: bool | None = None
-    if pset.covers():
-        cover_pset = PropertySet(properties=(*assumes, *pset.covers()))
-        cover_wrap = _write_wrapper(interface, cover_pset, workdir / "cover" / f"{top}.sv")
-        names, paths = _sources_for(duts, cover_wrap)
-        cov = runner.run_job(
-            SbyJob("cover", workdir / "cover", names, paths, top, "cover", depth, SMT)
-        )
-        cover_reachable = {"pass": True, "fail": False}.get(cov.status)
+    cover_reachable = check_cover_reachable(
+        interface, assumes, pset.covers(), duts=duts, runner=runner,
+        workdir=workdir / "cover", top=top, depth=depth,
+    )
 
     # 3) One run-group per assert.
     results: list[PropertyResult] = []
     for prop in pset.asserts():
         results.append(
-            _discharge_assert(
+            discharge_assert(
                 interface, prop, assumes, duts=duts, runner=runner,
                 workdir=workdir / prop.pid, top=top, depth=depth,
                 cover_reachable=cover_reachable, run_pdr=run_pdr,
@@ -93,7 +87,29 @@ def discharge(
     return results
 
 
-def _discharge_assert(
+def check_cover_reachable(
+    interface: ModuleInterface,
+    assumes: tuple[Property, ...],
+    covers: tuple[Property, ...],
+    *,
+    duts: Sequence[Path],
+    runner: SbyJobRunner,
+    workdir: Path,
+    top: str,
+    depth: int,
+) -> bool | None:
+    """Run `cover` over the covers under the given assumptions. Tri-state: pass ->
+    reachable, fail -> unreachable, anything else -> unchecked (None, so it never
+    falsely trips the vacuity guard). This is the anti-vacuity witness."""
+    if not covers:
+        return None
+    wrap = _write_wrapper(interface, PropertySet((*assumes, *covers)), workdir / f"{top}.sv")
+    names, paths = _sources_for(duts, wrap)
+    cov = runner.run_job(SbyJob("cover", workdir, names, paths, top, "cover", depth, SMT))
+    return {"pass": True, "fail": False}.get(cov.status)
+
+
+def discharge_assert(
     interface: ModuleInterface,
     prop: Property,
     assumes: tuple[Property, ...],
@@ -138,6 +154,16 @@ def _discharge_assert(
     verdict = decide_verdict(outcome)
 
     engine, used_depth, vcd, yw, detail = _attribute(verdict, bmc, prove, pdr)
+
+    # On a counterexample, parse the trace and attach a deterministic narration.
+    trace = None
+    if verdict is Verdict.FALSIFIED:
+        src = bmc if bmc.status == "fail" else prove
+        signal_names = [p.name for p in interface.ports if not p.is_clock]
+        trace = runner.parse_trace(src, signal_names)
+        if trace is not None:
+            detail = summarize_trace(trace)
+
     return PropertyResult(
         pid=prop.pid,
         verdict=verdict,
@@ -146,6 +172,7 @@ def _discharge_assert(
         depth=used_depth,
         trace_vcd=vcd,
         trace_yw=yw,
+        trace=trace,
         wall_seconds=elapsed,
         detail=detail,
     )

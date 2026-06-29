@@ -4,7 +4,16 @@ Pure — exercises no network (the `anthropic` client is never constructed).
 
 from __future__ import annotations
 
-from inductor.adapters.llm import _PropertyOut, _PropertySetOut, _to_domain, render_interface
+from inductor.adapters.llm import (
+    CexCause,
+    _CexOut,
+    _diag_to_domain,
+    _PatchOut,
+    _PropertyOut,
+    _PropertySetOut,
+    _to_domain,
+    render_interface,
+)
 from inductor.domain.interface import ModuleInterface, Port
 from inductor.domain.properties import PropertyKind
 
@@ -41,3 +50,22 @@ def test_render_interface_lists_ports_clock_reset() -> None:
     assert "clock: clk" in text
     assert "active-low" in text
     assert "output [4] count" in text
+
+
+def test_cex_diagnosis_with_patch_converts_to_domain() -> None:
+    out = _CexOut(
+        cause="over_strong",
+        narration="count climbs past 10 under normal counting",
+        patch=_PatchOut(pid="PB", kind="assert", summary="fixed", expr="count <= 4'd15"),
+    )
+    diag = _diag_to_domain(out)
+    assert diag.cause is CexCause.OVER_STRONG
+    assert diag.proposed_patch is not None
+    assert diag.proposed_patch.kind is PropertyKind.ASSERT
+    assert diag.proposed_patch.origin == "refined"
+
+
+def test_rtl_bug_diagnosis_has_no_patch() -> None:
+    diag = _diag_to_domain(_CexOut(cause="rtl_bug", narration="genuine bug", patch=None))
+    assert diag.cause is CexCause.RTL_BUG
+    assert diag.proposed_patch is None

@@ -41,6 +41,7 @@ __pycache__/
 *_work/
 sby_*/
 designs/_build/
+benchmarks/out/
 *.sby
 *.vcd
 *.yw

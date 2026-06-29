@@ -18,11 +18,13 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
 
 from inductor.adapters import ToolchainError, toolchain_status
+from inductor.domain.trace import Trace
 
 SbyMode = Literal["bmc", "prove", "cover", "live"]
 SbyStatus = Literal["pass", "fail", "unknown", "error", "timeout"]
@@ -56,6 +58,12 @@ class SbyRunResult:
 
 class SbyJobRunner(Protocol):
     def run_job(self, job: SbyJob) -> SbyRunResult: ...
+
+    def parse_trace(
+        self, result: SbyRunResult, signal_names: Sequence[str]
+    ) -> Trace | None:
+        """Parse a counterexample into a structured Trace (None if unavailable)."""
+        ...
 
 
 # --- pure builders + parsers (unit-tested offline) -----------------------------
@@ -153,6 +161,13 @@ class SbyCli:
         # Resolve trace paths (sby reports them relative to the outdir).
         outdir = job.workdir / job.name
         return _resolve_traces(result, outdir)
+
+    def parse_trace(
+        self, result: SbyRunResult, signal_names: Sequence[str]
+    ) -> Trace | None:
+        # Structured .yw/VCD witness parsing for the sby backend lands later; the
+        # report still links the on-disk trace_vcd. (yosys-sat parses its model.)
+        return None
 
 
 def _resolve_traces(result: SbyRunResult, outdir: Path) -> SbyRunResult:

@@ -23,6 +23,7 @@ dependencies = [
 # SymbiYosys / external solver, including on Windows. The sby+Bitwuzla backend
 # uses the OSS CAD Suite instead (not a pip dependency).
 wasm = ["yowasp-yosys>=0.45"]
+bench = ["matplotlib>=3.7"]  # charts for benchmarks/ (text/CSV output works without it)
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",

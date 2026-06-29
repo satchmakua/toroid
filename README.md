@@ -14,8 +14,8 @@ Inductor synthesizes "never overflow / never underflow," gets a counterexample
 waveform, narrates the exact failing cycle, pinpoints the bug — then proves the
 property holds on the fixed version.
 
-**Status:** M1 done — verifies real RTL end-to-end (proven-or-counterexample). See
-[ROADMAP.md](ROADMAP.md) for the plan.
+**Status:** M1–M4 built — verifies real RTL end-to-end and catches an injected FIFO
+bug, live. See [ROADMAP.md](ROADMAP.md) for the plan.
 
 ---
 
@@ -47,6 +47,22 @@ inductor verify designs/counter.v --top counter --no-llm --props designs/counter
 
 pytest                      # unit tests (fast, offline)
 pytest -m integration       # runs a real proof via Yosys (needs a Yosys on PATH)
+```
+
+### The demo that lands
+
+```bash
+# Clean FIFO: the flag/occupancy invariants hold.
+inductor verify designs/fifo.v --top fifo --no-llm --props designs/fifo.props.json
+#   → F1 (full ⟺ count==4), F2 (empty ⟺ count==0)  ✅ PROVEN
+
+# Buggy FIFO (off-by-one `full`): the bug is caught with a counterexample.
+inductor verify designs/fifo_buggy.v --top fifo --no-llm --props designs/fifo.props.json
+#   → F1 ❌ FALSIFIED (waveform shows full=0 at count==4); F2 ✅ PROVEN
+
+# Benchmarks (charts need the `bench` extra: pip install -e ".[bench]"):
+python -m benchmarks.bugcatch          # per-design verdicts + bug-catch chart
+python -m benchmarks.depth_vs_time     # bounded-proof time vs BMC depth
 ```
 
 ### Commands

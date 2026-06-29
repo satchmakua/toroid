@@ -1,0 +1,29 @@
+{
+  "_comment": "Assumption-free STRUCTURAL invariants for the FIFO flag/occupancy relationship. These hold in every state, so they prove on fifo.v and falsify on fifo_buggy.v with the yosys-sat backend (no reset assumption needed). Temporal overflow/underflow safety needs the sby backend (reset) and lives elsewhere.",
+  "properties": [
+    {
+      "pid": "F1",
+      "kind": "assert",
+      "summary": "full is asserted exactly when count == DEPTH (4)",
+      "expr": "full == (count == 3'd4)",
+      "rationale": "The full flag must match a full occupancy. The off-by-one bug breaks this.",
+      "origin": "human"
+    },
+    {
+      "pid": "F2",
+      "kind": "assert",
+      "summary": "empty is asserted exactly when count == 0",
+      "expr": "empty == (count == 3'd0)",
+      "rationale": "The empty flag must match an empty occupancy.",
+      "origin": "human"
+    },
+    {
+      "pid": "F3",
+      "kind": "cover",
+      "summary": "the FIFO can be full (count == 4)",
+      "expr": "count == 3'd4",
+      "rationale": "Reachability witness for the full condition.",
+      "origin": "human"
+    }
+  ]
+}

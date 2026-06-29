@@ -61,23 +61,36 @@ The milestone checklist.
 
 ## Phase 3 — Close the loop
 
-- [ ] **M3 — Counterexample loop.** Implement `adapters/witness.py` (`.yw` parse →
-  `Trace`) and `pipeline/refine.py`: narrate the failing cycle, classify
-  (rtl-bug / over-strong / missing-assumption), refine (guarded against vacuity),
-  re-run until stable, with the termination cap. _(= DESIGN M2.)_
-  **Test:** point it at a design with a real bug → it narrates the failing cycle and
-  classifies the cause; point it at an over-strong property → it refines and the
-  cover stays reachable; the loop always terminates.
+- [ ] **M3 — Counterexample loop.** Trace parsing (`yosys_sat.parse_sat_model` →
+  per-step `domain.trace.Trace`; `domain.trace.summarize_trace` for deterministic
+  narration), `adapters/llm.classify_cex` (structured output: rtl-bug / over-strong /
+  missing-assumption + patch), and `pipeline/refine.py` — the guarded refine loop
+  (terminates at `--max-refine`, RTL-bug terminal, anti-vacuity guard). Wired into
+  `verify` (LLM path; `--no-refine` to skip). _(= DESIGN M2.)_
+  **Test:** real bug → narrates the failing cycle and classifies the cause;
+  over-strong property → refines and the cover stays reachable; the loop always
+  terminates.
+  _Status: trace parsing + **deterministic cycle-by-cycle narration verified live**
+  (FALSIFIED reports show the real `count` trajectory). The refine loop's guarantees
+  (resolves / rtl-bug-terminal / vacuity-guard / termination) are **unit-tested
+  offline with fakes** (`test_refine.py`). The LLM `classify_cex` + the live refine
+  loop are code-complete but **gated on `ANTHROPIC_API_KEY`** — set a key and run
+  `inductor verify … --spec …` on a buggy design, confirm, then tick._
 
 ## Phase 4 — Make it land
 
-- [ ] **M4 — Demo gallery + benchmarks.** Add `designs/fifo.v` + `fifo_buggy.v`
-  (off-by-one full/empty), an arbiter, and an FSM; catch the injected FIFO bug with a
-  narrated waveform, prove invariants on clean modules, and produce matplotlib charts
-  (proof-depth-vs-time, bug-catch rate) in `benchmarks/`. _(= DESIGN M3 — public
-  ship.)_
+- [x] **M4 — Demo gallery + benchmarks.** `designs/fifo.v` + `fifo_buggy.v`
+  (off-by-one `full`), with structural flag/occupancy invariants; `benchmarks/`
+  (`bugcatch.py`, `depth_vs_time.py`) emitting Markdown/CSV + matplotlib charts.
+  _(= DESIGN M3 — public ship.)_
   **Test:** the buggy-FIFO run produces a screenshot-worthy proven-or-waveform
-  report; the benchmark scripts emit charts.
+  report; the benchmark scripts emit charts. ✅ **Confirmed live** (yosys-sat,
+  Windows): clean FIFO → F1/F2 PROVEN, buggy FIFO → F1 FALSIFIED with a
+  counterexample trace + F2 PROVEN; both charts generate.
+  _Scope note: the off-by-one is caught with an **assumption-free structural
+  invariant** (`full ⟺ count==DEPTH`) because the yosys-sat backend can't honor
+  reset/`assume` cells (legacy `sat` limitation — see ADR-0004). Temporal overflow
+  safety (needs reset) and an arbiter/FSM gallery are deferred to the sby backend._
 
 - [ ] **M5 (stretch) — Equivalence + protocols.** RTL-to-RTL equivalence (miter +
   Yosys `equiv`/`miter`) and an AXI-lite handshake property suite. _(= DESIGN M4.)_
@@ -89,3 +102,28 @@ The milestone checklist.
 **North star:** one screenshot of *proven-or-waveform on real RTL* — every claim
 tied to a solver verdict — that a senior verification engineer would trust at a
 glance.
+
+---
+
+## Review-driven hardening — from *built* to *proven* (added 2026-06-28)
+
+> Added after an external code review (captured in `../ai-docs/project_eval/`). The
+> feature milestones above are sound and several are already done — these items raise
+> the bar from "the machinery works" to a **complete, proven, stress-tested** product.
+> **Standing rule:** a milestone is checked only when it has produced **one real,
+> captured, reproducible artifact**, not merely passing unit tests.
+
+**Definition of Done — the "Sparkle Bar"** (applies to every milestone):
+1. **Real artifact captured** — produced against reality (real model/solver/data), pinned at the top of the README with the exact reproduce command.
+2. **Flagship demo in one screen** — the named demo shipped as a screenshot/gif.
+3. **Stress-tested** — property-based + failure-path + one scale test on the invariant-critical core, not just happy-path units.
+4. **Honest numbers** — bounds/CIs, a named baseline, an explicit "can't do" list.
+5. **Cold-clone reproducible** — pinned deps, fixed seeds, one `make demo`, CI runs the real-or-recorded path.
+6. **Polished** — no stray files, consistent docs, README opens with the artifact.
+7. **Positioned** — one paragraph: who it's for, what it beats, why this not the obvious alternative.
+
+**Hardening items (Inductor-specific):**
+- [ ] **H1 — Live LLM proof + offline fixture.** Run M2 synthesis and the M3 `classify_cex`/refine loop **live once** with a key; commit the transcript + the generated SVA, and **record the Anthropic exchange as a fixture** so `pytest` exercises the LLM path offline (no key) in CI. *Accept:* a committed example shows real Claude-synthesized properties that compile + discharge, and a buggy design where the live loop narrates → classifies → refines to a clean result; an offline replay covers it.
+- [ ] **H2 — Full `sby` + Bitwuzla in CI (vacuity + temporal).** Stand up the OSS CAD Suite on Linux/WSL2 CI so the `sby` backend runs — lifting the ADR-0004 "assumption-free structural invariant" limit so **vacuity checking** and **reset-dependent** properties (e.g. temporal overflow safety) are proven on the real path. *Accept:* a CI job proves a reset-dependent overflow-safety property and catches a vacuous pass on the `sby` backend.
+- [ ] **H3 — Property-test the verdict policy.** Fuzz `decide_verdict` over randomized `RawOutcome`s to prove the honesty ordering (FALSIFIED > VACUOUS > PROVEN-only-via-unbounded > BOUNDED_PASS) holds for *all* inputs — the safety-critical core deserves property tests, not just examples. *Accept:* a Hypothesis suite over the policy passes.
+- [ ] **H4 — Artifact-first README.** Lead with the FIFO proven-or-waveform screenshot + the benchmark charts (bug-catch rate, depth-vs-time).

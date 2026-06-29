@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from inductor.domain.trace import Trace
+
 
 class Verdict(StrEnum):
     PROVEN = "proven"  # unbounded: k-induction or pdr passed, no CEX
@@ -53,5 +55,6 @@ class PropertyResult:
     depth: int | None = None
     trace_yw: Path | None = None  # structured witness (falsified)
     trace_vcd: Path | None = None  # human waveform (falsified)
+    trace: Trace | None = None  # parsed per-step counterexample (falsified)
     wall_seconds: float = 0.0
     detail: str = ""

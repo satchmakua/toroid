@@ -19,10 +19,14 @@ _INDENT = "    "
 
 
 def _decl(port: Port, *, driven: bool) -> str:
-    """A wire declaration for the wrapper. Driven inputs get `= $anyseq`."""
+    """A wire declaration for the wrapper. Driven inputs get `= $anyseq`.
+
+    `(* keep *)` stops the optimizer from dissolving the signal so it survives into
+    the counterexample trace (VCD/.yw) under its real name — essential for readable
+    cycle-by-cycle narration (M3)."""
     span = f"[{port.width - 1}:0] " if port.is_vector else ""
     suffix = " = $anyseq" if driven else ""
-    return f"{_INDENT}wire {span}{port.name}{suffix};"
+    return f"{_INDENT}(* keep *) wire {span}{port.name}{suffix};"
 
 
 def render_wrapper(interface: ModuleInterface, pset: PropertySet) -> str:

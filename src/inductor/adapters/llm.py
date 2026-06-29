@@ -15,12 +15,15 @@ Model defaults (verified against the Anthropic API docs, 2026-06-28):
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
+from enum import StrEnum
 from typing import Literal, Protocol
 
 from pydantic import BaseModel
 
 from inductor.domain.interface import ModuleInterface
 from inductor.domain.properties import Property, PropertyKind, PropertySet
+from inductor.domain.trace import Trace, summarize_trace
 
 DEFAULT_MODEL = "claude-opus-4-8"
 
@@ -53,14 +56,48 @@ If given REPAIR FEEDBACK, the previous attempt failed to elaborate or was vacuou
 fix exactly those problems and re-emit the full corrected set."""
 
 
-class CexDiagnosis:  # filled out with fields in M3
-    """The LLM's read of a counterexample: cause + narration + proposed patch."""
+class CexCause(StrEnum):
+    RTL_BUG = "rtl_bug"  # the design violates a correct property — terminal
+    OVER_STRONG = "over_strong"  # the property is too strict — refine it
+    MISSING_ASSUMPTION = "missing_assumption"  # the environment needs a constraint
+
+
+@dataclass(frozen=True, slots=True)
+class CexDiagnosis:
+    """The LLM's read of a counterexample: cause + narration + an optional patch."""
+
+    cause: CexCause
+    narration: str
+    proposed_patch: Property | None  # a refined assert, or an assume, per the cause
+
+
+CLASSIFY_SYSTEM = """\
+You are a formal hardware-verification engineer debugging a FAILED safety property.
+You are given the property, the module interface, and a counterexample trace (per-step
+signal values from the model checker). Narrate the failing behavior cycle by cycle,
+then classify the root cause as exactly one of:
+
+- rtl_bug: the design violates a property that is correct as written. TERMINAL —
+  Inductor does not edit the design. No patch.
+- over_strong: the property is too strict / wrong. Propose a corrected `assert`
+  (kind="assert") that captures the real intent and would hold.
+- missing_assumption: the property assumed an environment constraint that wasn't
+  stated (e.g. an input protocol). Propose an `assume` (kind="assume").
+
+Any proposed patch must use the supported Yosys subset (immediate expression; $past,
+$rose, $stable, $initstate; real ports/widths). Do NOT weaken a property into vacuity
+to make it pass — a refinement must keep the original cover reachable. Reuse the
+original pid for an over_strong refinement; give an assume a fresh pid."""
 
 
 class LLMAdapter(Protocol):
     def synthesize(
         self, interface: ModuleInterface, spec: str, *, feedback: str | None = None
     ) -> PropertySet: ...
+
+    def classify_cex(
+        self, prop: Property, trace: Trace, interface: ModuleInterface
+    ) -> CexDiagnosis: ...
 
 
 # --- structured-output schema (Pydantic) ---------------------------------------
@@ -77,6 +114,34 @@ class _PropertyOut(BaseModel):
 
 class _PropertySetOut(BaseModel):
     properties: list[_PropertyOut]
+
+
+class _PatchOut(BaseModel):
+    pid: str
+    kind: Literal["assert", "assume"]
+    summary: str
+    expr: str
+    rationale: str = ""
+
+
+class _CexOut(BaseModel):
+    cause: Literal["rtl_bug", "over_strong", "missing_assumption"]
+    narration: str
+    patch: _PatchOut | None = None
+
+
+def _diag_to_domain(out: _CexOut) -> CexDiagnosis:
+    patch = None
+    if out.patch is not None:
+        patch = Property(
+            pid=out.patch.pid,
+            kind=PropertyKind(out.patch.kind),
+            summary=out.patch.summary,
+            expr=out.patch.expr,
+            rationale=out.patch.rationale,
+            origin="refined",
+        )
+    return CexDiagnosis(cause=CexCause(out.cause), narration=out.narration, proposed_patch=patch)
 
 
 def _to_domain(out: _PropertySetOut) -> PropertySet:
@@ -159,3 +224,32 @@ class ClaudeAdapter:
         if out is None:
             raise RuntimeError("LLM returned no parseable property set")
         return _to_domain(out)
+
+    def classify_cex(
+        self, prop: Property, trace: Trace, interface: ModuleInterface
+    ) -> CexDiagnosis:
+        client = self._ensure_client()
+        user = "\n".join(
+            [
+                "INTERFACE MODEL:",
+                render_interface(interface),
+                "",
+                f"FAILED PROPERTY {prop.pid} ({prop.summary}):",
+                f"  assert ({prop.expr});",
+                "",
+                "COUNTEREXAMPLE TRACE:",
+                summarize_trace(trace),
+            ]
+        )
+        response = client.messages.parse(  # type: ignore[attr-defined]
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system=CLASSIFY_SYSTEM,
+            thinking={"type": "adaptive"},
+            messages=[{"role": "user", "content": user}],
+            output_format=_CexOut,
+        )
+        out = response.parsed_output
+        if out is None:
+            raise RuntimeError("LLM returned no parseable diagnosis")
+        return _diag_to_domain(out)

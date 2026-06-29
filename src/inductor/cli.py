@@ -17,6 +17,7 @@ import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from inductor import __version__
 from inductor.domain.interface import ModuleInterface, Port
@@ -25,6 +26,11 @@ from inductor.domain.properties import Property, PropertyKind, PropertySet
 from inductor.domain.verdicts import PropertyResult, RawOutcome, Verdict
 from inductor.pipeline.report import render_report
 from inductor.render.checker import render_wrapper
+
+if TYPE_CHECKING:
+    from inductor.adapters.sby import SbyJobRunner
+    from inductor.adapters.yosys import YosysAdapter
+    from inductor.pipeline.refine import CexClassifier, RefineOutcome
 
 _NO_YOSYS_HELP = (
     "No Yosys found. Either:\n"
@@ -111,9 +117,56 @@ def _cmd_version(_: argparse.Namespace) -> int:
     return 0
 
 
+def _format_refinement(outcome: RefineOutcome) -> str:
+    lines = [f"Refinement: {outcome.rounds} round(s) -> {outcome.stop_reason}."]
+    for s in outcome.steps:
+        if s.diagnosis is not None:
+            lines.append(f"  round {s.round}: {s.diagnosis.cause.value} - {s.note}")
+        else:
+            lines.append(f"  round {s.round}: {s.verdict.value} - {s.note}")
+    return "\n".join(lines)
+
+
+def _refine_falsified(
+    results: list[PropertyResult],
+    interface: ModuleInterface,
+    pset: PropertySet,
+    *,
+    duts: list[Path],
+    yosys: YosysAdapter,
+    runner: SbyJobRunner,
+    classifier: CexClassifier,
+    workdir: Path,
+    depth: int,
+    max_rounds: int,
+    run_pdr: bool,
+) -> list[PropertyResult]:
+    from dataclasses import replace
+
+    from inductor.pipeline.refine import refine_property
+
+    asserts = {p.pid: p for p in pset.asserts()}
+    assumes, covers = pset.assumes(), pset.covers()
+    out: list[PropertyResult] = []
+    for r in results:
+        if r.verdict is not Verdict.FALSIFIED or r.pid not in asserts:
+            out.append(r)
+            continue
+        outcome = refine_property(
+            interface, asserts[r.pid], assumes, covers, duts=duts, yosys=yosys,
+            runner=runner, classifier=classifier, workdir=workdir / "refine" / r.pid,
+            depth=depth, max_rounds=max_rounds, run_pdr=run_pdr,
+        )
+        note = _format_refinement(outcome)
+        fr = outcome.result
+        detail = note + (f"\n\n{fr.detail}" if fr.detail else "")
+        out.append(replace(fr, detail=detail))
+    return out
+
+
 def _cmd_verify(args: argparse.Namespace) -> int:
     from inductor.adapters import toolchain_status
-    from inductor.adapters.sby import SbyCli, SbyJobRunner
+    from inductor.adapters.sby import SbyCli
     from inductor.adapters.yosys import YosysCli, find_yosys
     from inductor.adapters.yosys_sat import YosysSatCli
     from inductor.pipeline.discharge import discharge
@@ -137,6 +190,7 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     interface = yosys.extract_interface(rtl, args.top)
 
     # Obtain the property set — hand-written (--no-llm) or LLM-synthesized.
+    classifier: CexClassifier | None = None
     if args.no_llm:
         from inductor.loaders import load_property_set
 
@@ -157,9 +211,11 @@ def _cmd_verify(args: argparse.Namespace) -> int:
         from inductor.adapters.llm import ClaudeAdapter
         from inductor.pipeline.synth import synthesize_properties
 
+        claude = ClaudeAdapter()
+        classifier = claude  # reused for the refinement loop below
         spec = Path(args.spec).read_text(encoding="utf-8") if args.spec else ""
         synth = synthesize_properties(
-            interface, spec, llm=ClaudeAdapter(), yosys=yosys, duts=rtl,
+            interface, spec, llm=claude, yosys=yosys, duts=rtl,
             workdir=workdir, max_repairs=args.max_repairs,
         )
         print(
@@ -181,6 +237,16 @@ def _cmd_verify(args: argparse.Namespace) -> int:
         interface, pset, duts=rtl, yosys=yosys, runner=runner,
         workdir=workdir, depth=args.depth, run_pdr=(backend == "sby"),
     )
+
+    # Counterexample loop: classify + refine any falsified property (LLM path).
+    if classifier is not None and not args.no_refine and any(
+        r.verdict is Verdict.FALSIFIED for r in results
+    ):
+        results = _refine_falsified(
+            results, interface, pset, duts=rtl, yosys=yosys, runner=runner,
+            classifier=classifier, workdir=workdir, depth=args.depth,
+            max_rounds=args.max_refine, run_pdr=(backend == "sby"),
+        )
 
     print(f"# backend: {backend}", file=sys.stderr)
     report = render_report(interface, results)
@@ -226,6 +292,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_verify.add_argument(
         "--max-repairs", type=int, default=3, help="LLM synthesis repair attempts"
+    )
+    p_verify.add_argument(
+        "--no-refine", action="store_true", help="skip the LLM counterexample-refinement loop"
     )
     p_verify.add_argument("--engine", default="bitwuzla", help="solver engine (sby backend)")
     p_verify.add_argument(
