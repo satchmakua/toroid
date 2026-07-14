@@ -1,7 +1,8 @@
 # CI — lint, typecheck, unit tests, and the real-solver integration path on every
-# push / PR. The `dev` extra pulls in `yowasp-yosys` (WASM Yosys), so the yosys-sat
-# integration tests and the recorded-LLM replay run in CI with no external toolchain
-# and no API key. Tests needing SymbiYosys or a live model skip cleanly.
+# push / PR. The `check` job needs no external toolchain: the `dev` extra pulls in
+# `yowasp-yosys` (WASM Yosys), so the yosys-sat integration tests and the recorded-LLM
+# replay run with no toolchain and no API key. The `formal-sby` job adds the full OSS
+# CAD Suite (SymbiYosys + Bitwuzla). Tests needing a live model skip cleanly (no key).
 name: CI
 
 on:
@@ -35,17 +36,29 @@ jobs:
       - name: Integration (real proofs via yosys-sat + recorded-LLM replay)
         run: pytest -m integration
 
-  # Optional heavy job: the sby + Bitwuzla backend via the full OSS CAD Suite. Enable
-  # once the sby adapter is verified live (its tests are written but unrun).
-  # It un-skips the sby-gated integration tests.
-  #
-  # formal-sby:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-python@v5
-  #       with: { python-version: "3.11" }
-  #     - uses: YosysHQ/setup-oss-cad-suite@v3
-  #       with: { github-token: ${{ secrets.GITHUB_TOKEN }} }
-  #     - run: pip install -e ".[dev]"
-  #     - run: pytest -m integration
+  # The full sby + Bitwuzla path via the OSS CAD Suite (Linux). Un-skips the sby-gated
+  # integration tests: it proves an assume-dependent property (the ADR-0004 lift) and
+  # catches a vacuous pass — neither of which the lightweight yosys-sat backend can do.
+  # A separate job (heavier toolchain), so it doesn't gate the fast `check` job.
+  formal-sby:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Puts native yosys + sby + bitwuzla on PATH. python-override defaults to false,
+      # so the setup-python 3.11 above stays the interpreter for pip/pytest.
+      - name: Install OSS CAD Suite
+        uses: YosysHQ/setup-oss-cad-suite@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Integration (sby + Bitwuzla — full formal stack)
+        run: pytest -m integration

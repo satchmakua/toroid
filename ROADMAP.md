@@ -157,9 +157,10 @@ glance.
   `counter_assume.props.json` → `PA` **PROVEN on sby / FALSIFIED on yosys-sat** (assume
   honored), and `counter_vacuous.props.json` → `PV` **VACUOUS** (cover unreachable). With
   the suite present, `pytest -m integration` = **12 passed**; without it the 4 sby tests
-  skip cleanly. **Remaining:** wire + observe the actual GitHub Actions job (Linux, via
-  `YosysHQ/setup-oss-cad-suite`; scaffolded/commented in `ci.yml`) — the local run can't be
-  observed in CI without a push. Note: the Windows nightly mis-names `yosys-smtbmc`/
+  skip cleanly. **Remaining:** observe the first GitHub Actions run — the `formal-sby` job is
+  now **enabled** in `ci.yml` (Linux, `YosysHQ/setup-oss-cad-suite@v4`, separate from the
+  fast `check` job), but its run hasn't been watched yet. Note: the Windows nightly
+  mis-names `yosys-smtbmc`/
   `yosys-witness` (double `.exe`), worked around locally with `.cmd` shims; Linux CI is
   unaffected._
 - [x] **H3 — Property-test the verdict policy.** ✅ Done (2026-07-13).
