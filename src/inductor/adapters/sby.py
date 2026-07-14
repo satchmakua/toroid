@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 import subprocess
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -146,6 +146,10 @@ class SbyCli:
 
     def run_job(self, job: SbyJob) -> SbyRunResult:
         job.workdir.mkdir(parents=True, exist_ok=True)
+        # sby resolves [files] paths relative to the .sby file's own directory (the
+        # workdir), not the process CWD — so pass ABSOLUTE source paths. The [script]
+        # section still reads them by basename out of sby's copied src/ dir.
+        job = replace(job, file_paths=tuple(p.resolve() for p in job.file_paths))
         sby_path = job.workdir / f"{job.name}.sby"
         sby_path.write_text(build_sby_file(job), encoding="utf-8")
 

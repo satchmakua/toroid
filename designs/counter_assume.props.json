@@ -1,0 +1,29 @@
+{
+  "_comment": "ADR-0004 demonstrator: a property that holds ONLY because of an environmental assumption. PA is provable iff the assume cell A1 is honored. yosys-sat ignores assume cells (legacy `sat`), so it reports PA FALSIFIED; the sby + Bitwuzla backend honors the assume, so PA is PROVEN. Same property, two backends — the honest difference the sby backend buys (temporal safety, sequential equivalence, and AXI-lite all rely on this).",
+  "properties": [
+    {
+      "pid": "A1",
+      "kind": "assume",
+      "summary": "environment always drives enable high",
+      "expr": "en",
+      "rationale": "An environmental constraint on the DUT's input.",
+      "origin": "human"
+    },
+    {
+      "pid": "PA",
+      "kind": "assert",
+      "summary": "enable is high (true only under assumption A1)",
+      "expr": "en",
+      "rationale": "Trivially entailed by A1 — so it PROVES iff the assume is honored, and is FALSIFIED if the backend ignores assumes (ADR-0004).",
+      "origin": "human"
+    },
+    {
+      "pid": "CA",
+      "kind": "cover",
+      "summary": "enable-high is reachable",
+      "expr": "en",
+      "rationale": "Anti-vacuity witness for PA.",
+      "origin": "human"
+    }
+  ]
+}

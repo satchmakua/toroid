@@ -145,12 +145,23 @@ glance.
   the synthesis in CI with no key (`test_llm_replay`), and `test_synth_live_with_claude`
   covers the live path. The synthesis artifact is pinned at the top of the README.
 - [ ] **H2 — Full `sby` + Bitwuzla in CI (vacuity + temporal).** Stand up the OSS CAD Suite
-  on Linux/WSL2 CI so the `sby` backend runs — lifting the ADR-0004 limit so **vacuity
-  checking** and **reset-dependent** properties are proven on the real path. *Accept:* a
-  CI job proves a reset-dependent overflow-safety property and catches a vacuous pass.
-  _Progress: CI now runs the **yosys-sat + recorded-LLM** integration path (`pytest -m
-  integration`, no toolchain/key needed); the `sby` job is scaffolded (commented in
-  `ci.yml`) pending a local `sby` verification (its adapter is written but unrun)._
+  so the `sby` backend runs — lifting the ADR-0004 limit so **vacuity checking** and
+  **assume-dependent** properties are proven on the real path. *Accept:* a CI job proves an
+  assume-dependent property and catches a vacuous pass.
+  _Progress (2026-07-14): **the `sby` + Bitwuzla backend is now verified live** (OSS CAD
+  Suite 20260714, native Windows). Running it surfaced and fixed **two real bugs in the
+  previously-unrun path**: (1) the `.sby` `[files]` section used process-relative paths but
+  sby resolves them against its own workdir → now absolute (`adapters/sby.py`); (2) a stale
+  `discharge(sby=…)` kwarg in the integration test (the API is `runner=`). Both ADR-0004
+  acceptance behaviors are demonstrated and captured as gated tests (`test_counter_flow.py`):
+  `counter_assume.props.json` → `PA` **PROVEN on sby / FALSIFIED on yosys-sat** (assume
+  honored), and `counter_vacuous.props.json` → `PV` **VACUOUS** (cover unreachable). With
+  the suite present, `pytest -m integration` = **12 passed**; without it the 4 sby tests
+  skip cleanly. **Remaining:** wire + observe the actual GitHub Actions job (Linux, via
+  `YosysHQ/setup-oss-cad-suite`; scaffolded/commented in `ci.yml`) — the local run can't be
+  observed in CI without a push. Note: the Windows nightly mis-names `yosys-smtbmc`/
+  `yosys-witness` (double `.exe`), worked around locally with `.cmd` shims; Linux CI is
+  unaffected._
 - [x] **H3 — Property-test the verdict policy.** ✅ Done (2026-07-13).
   `test_policy_properties.py` fuzzes `decide_verdict` over every `RawOutcome` with
   Hypothesis: PROVEN only via an unbounded engine, error/CEX precedence, VACUOUS iff a

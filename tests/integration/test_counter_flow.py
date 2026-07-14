@@ -32,7 +32,7 @@ def _discharge(props_name: str, tmp_path: Path) -> dict[str, Verdict]:
     iface = yosys.extract_interface([dut], "counter")
     pset = load_property_set(REPO / "designs" / props_name)
     results = discharge(
-        iface, pset, duts=[dut], yosys=yosys, sby=SbyCli(), workdir=tmp_path, depth=20
+        iface, pset, duts=[dut], yosys=yosys, runner=SbyCli(), workdir=tmp_path, depth=20
     )
     return {r.pid: r.verdict for r in results}
 
@@ -46,3 +46,17 @@ def test_clean_counter_proves_or_bounded(tmp_path: Path) -> None:
 def test_overstrong_property_is_falsified(tmp_path: Path) -> None:
     verdicts = _discharge("counter_bad.props.json", tmp_path)
     assert verdicts["PB"] is Verdict.FALSIFIED
+
+
+def test_assume_is_honored_on_sby(tmp_path: Path) -> None:
+    # ADR-0004 lift: PA holds ONLY because the wrapper's assume cell is honored, so it
+    # PROVES on sby (the yosys-sat backend ignores assumes and reports it FALSIFIED).
+    verdicts = _discharge("counter_assume.props.json", tmp_path)
+    assert verdicts["PA"] is Verdict.PROVEN
+
+
+def test_vacuous_pass_is_caught_on_sby(tmp_path: Path) -> None:
+    # The anti-vacuity guard: PV passes only vacuously (its cover is unreachable under
+    # the assumption), so it must be reported VACUOUS, never PROVEN.
+    verdicts = _discharge("counter_vacuous.props.json", tmp_path)
+    assert verdicts["PV"] is Verdict.VACUOUS

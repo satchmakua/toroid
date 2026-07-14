@@ -1,0 +1,29 @@
+{
+  "_comment": "Vacuity demonstrator (needs the sby backend). Under assume A1 (enable always LOW), PV holds only because its antecedent (en) is never true — a false 'proof'. Its cover CV (en high) is UNREACHABLE, so the anti-vacuity guard must report PV as VACUOUS, not PROVEN. yosys-sat can't see this (it ignores the assume AND can't discharge covers), so this is a sby-only capability.",
+  "properties": [
+    {
+      "pid": "A1",
+      "kind": "assume",
+      "summary": "environment always holds enable low",
+      "expr": "!en",
+      "rationale": "An environmental constraint that makes PV's antecedent unreachable.",
+      "origin": "human"
+    },
+    {
+      "pid": "PV",
+      "kind": "assert",
+      "summary": "when enabled, count equals 5 (vacuously true: en never high)",
+      "expr": "!en || (count == 4'd5)",
+      "rationale": "Passes only because en is never high under A1 — a vacuous pass the guard must catch.",
+      "origin": "human"
+    },
+    {
+      "pid": "CV",
+      "kind": "cover",
+      "summary": "enable-high is reachable (UNREACHABLE under A1)",
+      "expr": "en",
+      "rationale": "Reachability witness for PV; its unreachability is exactly what makes PV vacuous.",
+      "origin": "human"
+    }
+  ]
+}
