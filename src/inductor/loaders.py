@@ -39,6 +39,24 @@ def property_from_dict(d: dict[str, Any]) -> Property:
     )
 
 
+def property_to_dict(p: Property) -> dict[str, Any]:
+    return {
+        "pid": p.pid,
+        "kind": p.kind.value,
+        "summary": p.summary,
+        "expr": p.expr,
+        "rationale": p.rationale,
+        "clocked": p.clocked,
+        "origin": p.origin,
+    }
+
+
+def property_set_to_dict(pset: PropertySet) -> dict[str, Any]:
+    """Serialize to the same JSON shape `load_property_set` reads — so a recorded
+    (real) LLM synthesis becomes a replayable fixture."""
+    return {"properties": [property_to_dict(p) for p in pset.properties]}
+
+
 def load_property_set(path: Path) -> PropertySet:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     raw = data.get("properties", [])

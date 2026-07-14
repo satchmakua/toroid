@@ -1,0 +1,17 @@
+{
+  "diagnoses": [
+    {
+      "cause": "over_strong",
+      "narration": "Step 0 is the only violating cycle: reset is asserted (rst=1) yet count reads 3'd4 while full=0, so full==(count==4) evaluates 0==1 and fails. This count=4 is a transient pre-reset/initial value of the count register that has not yet been cleared. From step 1 onward, once reset has taken effect, count is 0, full is 0, empty is 1, and the invariant full==(count==4) holds on every subsequent cycle (0==0). The property as written checks the full/count relationship unconditionally, including during the active reset window where the counter is being driven to its reset value and internal state is not yet consistent. The design invariant is only meant to hold in normal (post-reset) operation, so the assertion is too strict rather than reflecting an actual RTL fault.",
+      "patch": {
+        "pid": "F1",
+        "kind": "assert",
+        "summary": "Gate full/count invariant on reset being inactive",
+        "expr": "rst || (full == (count == 3'd4))",
+        "rationale": "During active-high reset the count register may still hold a stale/initial value (here 4) before it is cleared, so the invariant should only be enforced when rst is deasserted. Gating with rst keeps the meaningful full<->count==DEPTH check reachable in normal operation while excluding the reset transient.",
+        "clocked": true,
+        "origin": "refined"
+      }
+    }
+  ]
+}

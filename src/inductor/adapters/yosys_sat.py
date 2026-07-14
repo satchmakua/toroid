@@ -83,7 +83,7 @@ def parse_sat_output(stdout: str, mode: SbyMode, depth: int, vcd: Path | None) -
 class YosysSatCli:
     """Discharge backend backed by `yosys -p '... sat ...'`."""
 
-    def __init__(self, executable: str | None = None) -> None:
+    def __init__(self, executable: str | None = None, *, timeout: float = 300.0) -> None:
         exe = executable or find_yosys()
         if exe is None:
             raise ToolchainError(
@@ -91,6 +91,7 @@ class YosysSatCli:
                 "backend: `pip install yowasp-yosys`."
             )
         self.executable: str = exe
+        self.timeout = timeout
 
     def run_job(self, job: SbyJob) -> SbyRunResult:
         outdir = job.workdir / job.name
@@ -114,11 +115,17 @@ class YosysSatCli:
         else:  # cover / live: not supported by this backend
             return SbyRunResult(status="unknown", mode=job.mode, engine=ENGINE, depth=job.depth)
 
-        proc = subprocess.run(
-            [self.executable, "-p", f"{reads}; {prep}; {sat}"],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            proc = subprocess.run(
+                [self.executable, "-p", f"{reads}; {prep}; {sat}"],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+            )
+        except subprocess.TimeoutExpired:
+            # A pathological solve maps to the honest INCONCLUSIVE path (discharge
+            # treats "timeout" like "unknown"), never a false pass or a CI hang.
+            return SbyRunResult(status="timeout", mode=job.mode, engine=ENGINE, depth=job.depth)
         return parse_sat_output(proc.stdout + proc.stderr, job.mode, job.depth, vcd)
 
     def parse_trace(

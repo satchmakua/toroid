@@ -1,0 +1,85 @@
+{
+  "properties": [
+    {
+      "pid": "P1",
+      "kind": "assert",
+      "summary": "After synchronous reset, count is 0",
+      "expr": "($initstate || !$past(rst)) || (count == 4'd0)",
+      "rationale": "Spec property 4: rst active-high synchronous forces count to 0 on next clock.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P2",
+      "kind": "assert",
+      "summary": "Enabled below max increments by 1",
+      "expr": "($initstate || $past(rst) || !$past(en) || ($past(count) == 4'd15)) || (count == ($past(count) + 4'd1))",
+      "rationale": "Spec: when en high, not at max, out of reset, count increments by 1.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P3",
+      "kind": "assert",
+      "summary": "Enabled at max saturates at 15 (no wrap)",
+      "expr": "($initstate || $past(rst) || !$past(en) || ($past(count) != 4'd15)) || (count == 4'd15)",
+      "rationale": "Spec property 2: at 15 while enabled count stays 15, never wraps to 0.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P4",
+      "kind": "assert",
+      "summary": "Disabled out of reset holds value",
+      "expr": "($initstate || $past(rst) || $past(en)) || (count == $past(count))",
+      "rationale": "Spec property 3: when en low and not in reset, count is unchanged.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P5",
+      "kind": "assert",
+      "summary": "count never exceeds 15",
+      "expr": "count <= 4'd15",
+      "rationale": "Spec property 1: no overflow; count stays within 4-bit max.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P6",
+      "kind": "cover",
+      "summary": "count can reach 15",
+      "expr": "count == 4'd15",
+      "rationale": "Anti-vacuity for P3/P5: counter actually reaches saturation value.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P7",
+      "kind": "cover",
+      "summary": "Reset drives count to 0",
+      "expr": "!$initstate && $past(rst) && (count == 4'd0)",
+      "rationale": "Anti-vacuity for P1: reset case is reachable.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P8",
+      "kind": "cover",
+      "summary": "An increment actually occurs",
+      "expr": "!$initstate && !$past(rst) && $past(en) && ($past(count) < 4'd15) && (count == ($past(count) + 4'd1))",
+      "rationale": "Anti-vacuity for P2: enabled increment step is reachable.",
+      "clocked": true,
+      "origin": "llm"
+    },
+    {
+      "pid": "P9",
+      "kind": "cover",
+      "summary": "A hold actually occurs",
+      "expr": "!$initstate && !$past(rst) && !$past(en) && (count == $past(count)) && (count != 4'd0)",
+      "rationale": "Anti-vacuity for P4: disabled hold of a nonzero value is reachable.",
+      "clocked": true,
+      "origin": "llm"
+    }
+  ]
+}

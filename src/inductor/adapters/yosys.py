@@ -113,8 +113,9 @@ def parse_write_json(data: dict[str, Any], top: str) -> ModuleInterface:
 class YosysCli:
     """Real adapter that shells out to `yosys`."""
 
-    def __init__(self, executable: str = "yosys") -> None:
+    def __init__(self, executable: str = "yosys", *, timeout: float = 300.0) -> None:
         self.executable = executable
+        self.timeout = timeout
         if shutil.which(executable) is None and not Path(executable).is_file():
             raise ToolchainError(
                 f"{executable!r} not found. Install the OSS CAD Suite "
@@ -124,11 +125,21 @@ class YosysCli:
             )
 
     def _run(self, script: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            [self.executable, "-q", "-p", script],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            return subprocess.run(
+                [self.executable, "-q", "-p", script],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+            )
+        except subprocess.TimeoutExpired as e:
+            # Surface a hang as a non-zero result so callers fail cleanly (an
+            # elaboration/extraction that hangs would otherwise block indefinitely).
+            out = e.stdout if isinstance(e.stdout, str) else ""
+            err = (e.stderr if isinstance(e.stderr, str) else "") + (
+                f"\nyosys timed out after {self.timeout:.0f}s"
+            )
+            return subprocess.CompletedProcess(e.cmd, returncode=124, stdout=out, stderr=err)
 
     def extract_interface(
         self, sources: list[Path], top: str, *, workdir: Path | None = None

@@ -28,6 +28,7 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "hypothesis>=6.0",
     "yowasp-yosys>=0.45",
 ]
 

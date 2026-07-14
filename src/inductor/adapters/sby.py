@@ -135,8 +135,9 @@ def parse_sby_output(stdout: str, mode: SbyMode, engine: str, depth: int) -> Sby
 class SbyCli:
     """Real adapter that shells out to `sby`."""
 
-    def __init__(self, executable: str = "sby") -> None:
+    def __init__(self, executable: str = "sby", *, timeout: float = 900.0) -> None:
         self.executable = executable
+        self.timeout = timeout
         if not toolchain_status().sby:
             raise ToolchainError(
                 "sby (SymbiYosys) not found on PATH. Install the OSS CAD Suite "
@@ -148,12 +149,19 @@ class SbyCli:
         sby_path = job.workdir / f"{job.name}.sby"
         sby_path.write_text(build_sby_file(job), encoding="utf-8")
 
-        proc = subprocess.run(
-            [self.executable, "-f", sby_path.name],
-            cwd=job.workdir,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            proc = subprocess.run(
+                [self.executable, "-f", sby_path.name],
+                cwd=job.workdir,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+            )
+        except subprocess.TimeoutExpired:
+            # Honest INCONCLUSIVE (discharge maps "timeout" like "unknown"), not a hang.
+            return SbyRunResult(
+                status="timeout", mode=job.mode, engine=job.engine, depth=job.depth
+            )
         result = parse_sby_output(
             proc.stdout + proc.stderr, job.mode, job.engine, job.depth
         )

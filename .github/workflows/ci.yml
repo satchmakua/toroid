@@ -1,4 +1,7 @@
-# CI — lint, typecheck, and test on every push / PR.
+# CI — lint, typecheck, unit tests, and the real-solver integration path on every
+# push / PR. The `dev` extra pulls in `yowasp-yosys` (WASM Yosys), so the yosys-sat
+# integration tests and the recorded-LLM replay run in CI with no external toolchain
+# and no API key. Tests needing SymbiYosys or a live model skip cleanly.
 name: CI
 
 on:
@@ -9,6 +12,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # fail fast instead of burning the default 6h cap if a solve hangs
     steps:
       - uses: actions/checkout@v4
 
@@ -25,13 +29,17 @@ jobs:
       - name: Typecheck
         run: mypy
 
-      - name: Test
+      - name: Unit tests
         run: pytest
 
-  # Integration tests that shell out to SymbiYosys need the open formal toolchain.
-  # Uncomment once M1 lands `sby`-backed tests (they skip cleanly without it):
+      - name: Integration (real proofs via yosys-sat + recorded-LLM replay)
+        run: pytest -m integration
+
+  # Optional heavy job: the sby + Bitwuzla backend via the full OSS CAD Suite. Enable
+  # once the sby adapter is verified live (its tests are written but unrun).
+  # It un-skips the sby-gated integration tests.
   #
-  # formal:
+  # formal-sby:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - uses: actions/checkout@v4
