@@ -9,8 +9,8 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis import strategies as st
 
-from inductor.domain.policy import decide_verdict
-from inductor.domain.verdicts import RawOutcome, Verdict
+from toroid.domain.policy import decide_verdict
+from toroid.domain.verdicts import RawOutcome, Verdict
 
 _tri = st.sampled_from([True, False, None])
 _outcomes = st.builds(

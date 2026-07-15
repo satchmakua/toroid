@@ -1,4 +1,4 @@
-// 4-bit saturating counter — the canonical sample DUT for Inductor.
+// 4-bit saturating counter — the canonical sample DUT for Toroid.
 // Clean (bug-free) variant. Buggy variants land alongside this in later milestones.
 //
 // Behavior: synchronous active-high reset clears `count` to 0. When `en` is high,

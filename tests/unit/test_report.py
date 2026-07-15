@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.verdicts import PropertyResult, Verdict
-from inductor.pipeline.report import badge, render_report
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.verdicts import PropertyResult, Verdict
+from toroid.pipeline.report import badge, render_report
 
 
 def _iface() -> ModuleInterface:
@@ -19,7 +19,7 @@ def test_table_has_a_row_per_result() -> None:
         PropertyResult("P2", Verdict.BOUNDED_PASS, "holds", engine="smtbmc/bitwuzla", depth=20),
     ]
     md = render_report(_iface(), results)
-    assert "# Inductor report — `counter`" in md
+    assert "# Toroid report — `counter`" in md
     assert "`P1`" in md and "`P2`" in md
     assert badge(Verdict.PROVEN) in md
     assert badge(Verdict.BOUNDED_PASS) in md

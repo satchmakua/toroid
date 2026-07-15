@@ -12,8 +12,8 @@ Yosys; the Yosys adapter's compile gate decides whether the output elaborates.
 
 from __future__ import annotations
 
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import PropertySet
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import PropertySet
 
 _INDENT = "    "
 
@@ -35,7 +35,7 @@ def render_wrapper(interface: ModuleInterface, pset: PropertySet) -> str:
     clk = interface.clock or "clk"
 
     lines: list[str] = []
-    lines.append(f"// Auto-generated formal wrapper for `{top}` — Inductor.")
+    lines.append(f"// Auto-generated formal wrapper for `{top}` — Toroid.")
     lines.append("// Supported open-Yosys subset only (immediate assertions).")
     lines.append(f"module {top}_fv (input {clk});")
 

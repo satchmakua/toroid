@@ -10,11 +10,11 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 
-from inductor.adapters.yosys import YosysCli, find_yosys
-from inductor.adapters.yosys_sat import YosysSatCli
-from inductor.domain.verdicts import PropertyResult, Verdict
-from inductor.loaders import load_property_set
-from inductor.pipeline.discharge import discharge
+from toroid.adapters.yosys import YosysCli, find_yosys
+from toroid.adapters.yosys_sat import YosysSatCli
+from toroid.domain.verdicts import PropertyResult, Verdict
+from toroid.loaders import load_property_set
+from toroid.pipeline.discharge import discharge
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "benchmarks" / "out"
@@ -71,7 +71,7 @@ def plot(rows: list[tuple[str, str, list[PropertyResult]]], path: Path) -> bool:
     ax.bar(labels, proven, label="proven", color="#2e7d32")
     ax.bar(labels, falsified, bottom=proven, label="falsified", color="#c62828")
     ax.set_ylabel("properties")
-    ax.set_title("Inductor — proven vs falsified per design")
+    ax.set_title("Toroid — proven vs falsified per design")
     ax.legend()
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)

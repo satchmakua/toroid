@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
 
-from inductor.domain.trace import Trace
+from toroid.domain.trace import Trace
 
 __all__ = ["Trace", "WitnessParser", "parse_vcd"]
 

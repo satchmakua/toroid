@@ -23,8 +23,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, Protocol
 
-from inductor.adapters import ToolchainError, toolchain_status
-from inductor.domain.trace import Trace
+from toroid.adapters import ToolchainError, toolchain_status
+from toroid.domain.trace import Trace
 
 SbyMode = Literal["bmc", "prove", "cover", "live"]
 SbyStatus = Literal["pass", "fail", "unknown", "error", "timeout"]

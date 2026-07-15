@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from inductor.domain.properties import PropertyKind
-from inductor.loaders import load_property_set
+from toroid.domain.properties import PropertyKind
+from toroid.loaders import load_property_set
 
 REPO = Path(__file__).resolve().parents[2]
 

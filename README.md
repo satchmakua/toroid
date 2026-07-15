@@ -1,15 +1,17 @@
-# Inductor
+# Toroid
+
+*(formerly Inductor)*
 
 > **AI that writes and proves correctness properties for chips.**
 
-Inductor reads a spec and a small RTL module, synthesizes formal properties with an
+Toroid reads a spec and a small RTL module, synthesizes formal properties with an
 LLM, runs an open-source model checker (Yosys + SymbiYosys), and iterates on
 counterexamples — automating the hardware-verification engineer's inner loop. The
 LLM proposes; the solver disposes, so **hallucination cannot pass verification**.
 Every reported result is a bounded proof to depth *k*, an unbounded proof, or a
 concrete counterexample waveform — never the model's unverified say-so.
 
-The demo: point it at a FIFO with an injected off-by-one in its `full` flag. Inductor
+The demo: point it at a FIFO with an injected off-by-one in its `full` flag. Toroid
 checks the flag/occupancy invariant `full ⟺ count==DEPTH`, **proves it on the correct
 FIFO and falsifies it on the buggy one** with a solver counterexample — a state where
 the flag disagrees with the true occupancy at the `DEPTH` boundary — and narrates the
@@ -46,7 +48,7 @@ and replayed offline with **no API key** — `pytest -m integration -k recorded_
 reproduces the table above (the 4 covers are anti-vacuity witnesses; yosys-sat reports
 `unknown` for cover mode, so only the 5 asserts carry a verdict). A fresh live run
 (needs `ANTHROPIC_API_KEY`, and is non-deterministic run to run):
-`inductor verify designs/counter.v --spec designs/counter.md --top counter`.
+`toroid verify designs/counter.v --spec designs/counter.md --top counter`.
 
 **2 — It catches a real bug, with a solver counterexample.** The buggy FIFO computes its
 `full` flag one slot early — `assign full = (cnt == 3'd3)` instead of `== 4`. The
@@ -55,7 +57,7 @@ falsified on the buggy one**; the solver returns a state where `count == 4` yet
 `full == 0`, exactly the dropped boundary:
 
 ```
-$ inductor verify designs/fifo_buggy.v --top fifo --no-llm --props designs/fifo.props.json
+$ toroid verify designs/fifo_buggy.v --top fifo --no-llm --props designs/fifo.props.json
 | F1  full is asserted exactly when count == DEPTH (4) | ❌ FALSIFIED | yosys-sat | depth 20 |
 | F2  empty is asserted exactly when count == 0        | ✅ PROVEN    | yosys-sat |    —     |
 
@@ -74,8 +76,8 @@ temporal overflow story is the sby-backend path (roadmap H2).
 inputs — the hardware sibling of *Congruent*:
 
 ```
-$ inductor equiv designs/max2.v designs/max2_alt.v     --top-a max2 --top-b max2_alt      → ✅ PROVEN
-$ inductor equiv designs/max2.v designs/max2_min_bug.v --top-a max2 --top-b max2_min_bug  → ❌ FALSIFIED
+$ toroid equiv designs/max2.v designs/max2_alt.v     --top-a max2 --top-b max2_alt      → ✅ PROVEN
+$ toroid equiv designs/max2.v designs/max2_min_bug.v --top-a max2 --top-b max2_min_bug  → ❌ FALSIFIED
     distinguishing input at step 0:  a=4  b=2  →  max2 y=4   impostor y=2
 ```
 
@@ -111,11 +113,11 @@ python -m venv .venv && source .venv/Scripts/activate   # Windows Git Bash
                                                         # (Linux/macOS: .venv/bin/activate)
 pip install -e ".[dev]"     # once (includes yowasp-yosys)
 
-inductor demo               # offline showcase: render a wrapper + a sample report
+toroid demo               # offline showcase: render a wrapper + a sample report
 # Verify real RTL (run from the repo root; yowasp-yosys is sandboxed to the CWD):
-inductor verify designs/counter.v --spec designs/counter.md --top counter --no-llm
+toroid verify designs/counter.v --spec designs/counter.md --top counter --no-llm
 # → P1, P2 ✅ PROVEN.  Try the over-strong property to see a counterexample:
-inductor verify designs/counter.v --top counter --no-llm --props designs/counter_bad.props.json
+toroid verify designs/counter.v --top counter --no-llm --props designs/counter_bad.props.json
 # → PB ❌ FALSIFIED, with a waveform written under designs/_build/.
 
 pytest                      # unit tests (fast, offline)
@@ -126,11 +128,11 @@ pytest -m integration       # runs a real proof via Yosys (needs a Yosys on PATH
 
 ```bash
 # Clean FIFO: the flag/occupancy invariants hold.
-inductor verify designs/fifo.v --top fifo --no-llm --props designs/fifo.props.json
+toroid verify designs/fifo.v --top fifo --no-llm --props designs/fifo.props.json
 #   → F1 (full ⟺ count==4), F2 (empty ⟺ count==0)  ✅ PROVEN
 
 # Buggy FIFO (off-by-one `full`): the bug is caught with a counterexample.
-inductor verify designs/fifo_buggy.v --top fifo --no-llm --props designs/fifo.props.json
+toroid verify designs/fifo_buggy.v --top fifo --no-llm --props designs/fifo.props.json
 #   → F1 ❌ FALSIFIED (waveform shows full=0 at count==4); F2 ✅ PROVEN
 
 # Benchmarks (charts need the `bench` extra: pip install -e ".[bench]"):
@@ -138,19 +140,19 @@ python -m benchmarks.bugcatch          # per-design verdicts + bug-catch chart
 python -m benchmarks.depth_vs_time     # bounded-proof time vs BMC depth
 
 # RTL-to-RTL equivalence:
-inductor equiv designs/max2.v designs/max2_alt.v    --top-a max2 --top-b max2_alt     # ✅ PROVEN
-inductor equiv designs/max2.v designs/max2_min_bug.v --top-a max2 --top-b max2_min_bug # ❌ distinguishing input
+toroid equiv designs/max2.v designs/max2_alt.v    --top-a max2 --top-b max2_alt     # ✅ PROVEN
+toroid equiv designs/max2.v designs/max2_min_bug.v --top-a max2 --top-b max2_min_bug # ❌ distinguishing input
 ```
 
 ### Commands
 
 | Command | What it does |
 |---|---|
-| `inductor demo` | Offline: render the formal wrapper + a sample verdict report. |
-| `inductor verify <rtl…> --top <name> --no-llm` | Discharge a hand-written property file against the RTL. |
-| `inductor verify … --backend {auto,sby,yosys-sat}` | Pick the engine (auto: sby if present, else yosys-sat). |
-| `inductor equiv <a.v> <b.v> --top-a A --top-b B` | Prove two designs equivalent, or find a distinguishing input. |
-| `inductor extract <rtl…> --top <name>` | Print the extracted interface model (debug). |
+| `toroid demo` | Offline: render the formal wrapper + a sample verdict report. |
+| `toroid verify <rtl…> --top <name> --no-llm` | Discharge a hand-written property file against the RTL. |
+| `toroid verify … --backend {auto,sby,yosys-sat}` | Pick the engine (auto: sby if present, else yosys-sat). |
+| `toroid equiv <a.v> <b.v> --top-a A --top-b B` | Prove two designs equivalent, or find a distinguishing input. |
+| `toroid extract <rtl…> --top <name>` | Print the extracted interface model (debug). |
 | `pytest` / `pytest -m integration` | Unit tests / live end-to-end tests. |
 | `ruff check . && mypy` | Lint + typecheck. |
 

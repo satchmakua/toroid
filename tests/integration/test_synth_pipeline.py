@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from inductor.adapters.yosys import find_yosys
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.domain.verdicts import Verdict
+from toroid.adapters.yosys import find_yosys
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.verdicts import Verdict
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -43,10 +43,10 @@ class _FixedLLM:
 @pytest.mark.integration
 @pytest.mark.skipif(find_yosys() is None, reason="needs a Yosys (pip install yowasp-yosys)")
 def test_synth_then_discharge_with_fake_llm() -> None:
-    from inductor.adapters.yosys import YosysCli
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.pipeline.discharge import discharge
-    from inductor.pipeline.synth import synthesize_properties
+    from toroid.adapters.yosys import YosysCli
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.pipeline.discharge import discharge
+    from toroid.pipeline.synth import synthesize_properties
 
     exe = find_yosys()
     assert exe is not None
@@ -79,11 +79,11 @@ def test_synth_then_discharge_with_fake_llm() -> None:
 def test_synth_live_with_claude() -> None:
     """Real Claude synthesis on the counter → must compile and prove at least one
     property. Runs only when an API key is present."""
-    from inductor.adapters.llm import ClaudeAdapter
-    from inductor.adapters.yosys import YosysCli
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.pipeline.discharge import discharge
-    from inductor.pipeline.synth import synthesize_properties
+    from toroid.adapters.llm import ClaudeAdapter
+    from toroid.adapters.yosys import YosysCli
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.pipeline.discharge import discharge
+    from toroid.pipeline.synth import synthesize_properties
 
     exe = find_yosys()
     assert exe is not None

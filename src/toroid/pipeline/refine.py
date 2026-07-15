@@ -6,7 +6,7 @@ resolves or a bound is hit. The guarantees that make this safe:
 
 * **Terminates** — at most `max_rounds`, and each round must change the property set
   (a no-op / invalid patch stops the loop).
-* **RTL-bug is terminal** — Inductor never edits the design; an `rtl_bug` verdict
+* **RTL-bug is terminal** — Toroid never edits the design; an `rtl_bug` verdict
   ends the loop with the counterexample reported.
 * **Never cheats** — a `missing_assumption` patch is rejected if it makes the
   reachability cover unreachable (the anti-vacuity guard); the property keeps its
@@ -23,14 +23,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from inductor.adapters.llm import CexCause, CexDiagnosis
-from inductor.adapters.sby import SbyJobRunner
-from inductor.adapters.yosys import YosysAdapter
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.properties import Property, PropertyKind
-from inductor.domain.trace import Trace
-from inductor.domain.verdicts import PropertyResult, Verdict
-from inductor.pipeline.discharge import check_cover_reachable, discharge_assert
+from toroid.adapters.llm import CexCause, CexDiagnosis
+from toroid.adapters.sby import SbyJobRunner
+from toroid.adapters.yosys import YosysAdapter
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.properties import Property, PropertyKind
+from toroid.domain.trace import Trace
+from toroid.domain.verdicts import PropertyResult, Verdict
+from toroid.pipeline.discharge import check_cover_reachable, discharge_assert
 
 
 class CexClassifier(Protocol):

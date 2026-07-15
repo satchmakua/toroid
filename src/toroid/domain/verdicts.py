@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-from inductor.domain.trace import Trace
+from toroid.domain.trace import Trace
 
 
 class Verdict(StrEnum):

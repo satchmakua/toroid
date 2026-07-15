@@ -18,10 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from inductor.adapters.yosys import YosysAdapter
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.properties import PropertySet
-from inductor.render.checker import render_wrapper
+from toroid.adapters.yosys import YosysAdapter
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.properties import PropertySet
+from toroid.render.checker import render_wrapper
 
 
 class Synthesizer(Protocol):

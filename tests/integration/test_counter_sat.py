@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from inductor.adapters.yosys import find_yosys
-from inductor.domain.verdicts import PropertyResult, Verdict
+from toroid.adapters.yosys import find_yosys
+from toroid.domain.verdicts import PropertyResult, Verdict
 
 pytestmark = [
     pytest.mark.integration,
@@ -25,10 +25,10 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _discharge_sat(props_name: str) -> dict[str, PropertyResult]:
-    from inductor.adapters.yosys import YosysCli
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.loaders import load_property_set
-    from inductor.pipeline.discharge import discharge
+    from toroid.adapters.yosys import YosysCli
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.loaders import load_property_set
+    from toroid.pipeline.discharge import discharge
 
     exe = find_yosys()
     assert exe is not None

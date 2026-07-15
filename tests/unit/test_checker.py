@@ -5,9 +5,9 @@ immediate assert/cover statements in one clocked block (DESIGN.md §4.1).
 
 from __future__ import annotations
 
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.render.checker import render_wrapper
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.render.checker import render_wrapper
 
 
 def _counter_iface() -> ModuleInterface:

@@ -4,7 +4,7 @@ Pure — no toolchain needed.
 
 from __future__ import annotations
 
-from inductor.adapters.yosys_sat import parse_sat_output
+from toroid.adapters.yosys_sat import parse_sat_output
 
 HOLDS = "...\nSAT proof finished - no model found: SUCCESS!\n"
 CEX = "...\nSAT proof finished - model found: FAIL!\n## got a witness, dumping trace\n"

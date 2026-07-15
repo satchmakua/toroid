@@ -1,9 +1,9 @@
-"""Inductor command-line interface.
+"""Toroid command-line interface.
 
-    inductor verify <rtl...> --spec <md> --top <name> [--depth 20] [--max-refine 5]
-    inductor extract <rtl...> --top <name>     # interface model only (debug)
-    inductor demo                              # offline showcase: render + report
-    inductor version
+    toroid verify <rtl...> --spec <md> --top <name> [--depth 20] [--max-refine 5]
+    toroid extract <rtl...> --top <name>     # interface model only (debug)
+    toroid demo                              # offline showcase: render + report
+    toroid version
 
 `demo` runs end-to-end with no external toolchain (the walking-skeleton path).
 `verify`/`extract` need the OSS CAD Suite (yosys + sby) and print setup guidance
@@ -19,18 +19,18 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from inductor import __version__
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.policy import DEFAULT_BMC_DEPTH, DEFAULT_MAX_REFINE, decide_verdict
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.domain.verdicts import PropertyResult, RawOutcome, Verdict
-from inductor.pipeline.report import render_report
-from inductor.render.checker import render_wrapper
+from toroid import __version__
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.policy import DEFAULT_BMC_DEPTH, DEFAULT_MAX_REFINE, decide_verdict
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.verdicts import PropertyResult, RawOutcome, Verdict
+from toroid.pipeline.report import render_report
+from toroid.render.checker import render_wrapper
 
 if TYPE_CHECKING:
-    from inductor.adapters.sby import SbyJobRunner
-    from inductor.adapters.yosys import YosysAdapter
-    from inductor.pipeline.refine import CexClassifier, RefineOutcome
+    from toroid.adapters.sby import SbyJobRunner
+    from toroid.adapters.yosys import YosysAdapter
+    from toroid.pipeline.refine import CexClassifier, RefineOutcome
 
 _NO_YOSYS_HELP = (
     "No Yosys found. Either:\n"
@@ -38,7 +38,7 @@ _NO_YOSYS_HELP = (
     "works on Windows), or\n"
     "  • install the full OSS CAD Suite for the SymbiYosys + Bitwuzla backend "
     "(https://github.com/YosysHQ/oss-cad-suite-build; WSL2 on Windows).\n"
-    "Meanwhile, `inductor demo` runs fully offline."
+    "Meanwhile, `toroid demo` runs fully offline."
 )
 
 
@@ -103,9 +103,9 @@ def _demo_results() -> list[PropertyResult]:
 
 
 def _cmd_equiv(args: argparse.Namespace) -> int:
-    from inductor.adapters.yosys import YosysCli, find_yosys
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.pipeline.equiv import check_equivalence
+    from toroid.adapters.yosys import YosysCli, find_yosys
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.pipeline.equiv import check_equivalence
 
     yosys_exe = find_yosys()
     if yosys_exe is None:
@@ -142,7 +142,7 @@ def _cmd_demo(_: argparse.Namespace) -> int:
 
 
 def _cmd_version(_: argparse.Namespace) -> int:
-    print(f"inductor {__version__}")
+    print(f"toroid {__version__}")
     return 0
 
 
@@ -172,7 +172,7 @@ def _refine_falsified(
 ) -> list[PropertyResult]:
     from dataclasses import replace
 
-    from inductor.pipeline.refine import refine_property
+    from toroid.pipeline.refine import refine_property
 
     asserts = {p.pid: p for p in pset.asserts()}
     assumes, covers = pset.assumes(), pset.covers()
@@ -194,11 +194,11 @@ def _refine_falsified(
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
-    from inductor.adapters import toolchain_status
-    from inductor.adapters.sby import SbyCli
-    from inductor.adapters.yosys import YosysCli, find_yosys
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.pipeline.discharge import discharge
+    from toroid.adapters import toolchain_status
+    from toroid.adapters.sby import SbyCli
+    from toroid.adapters.yosys import YosysCli, find_yosys
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.pipeline.discharge import discharge
 
     yosys_exe = find_yosys()
     if yosys_exe is None:
@@ -221,7 +221,7 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     # Obtain the property set — hand-written (--no-llm) or LLM-synthesized.
     classifier: CexClassifier | None = None
     if args.no_llm:
-        from inductor.loaders import load_property_set
+        from toroid.loaders import load_property_set
 
         props_path = Path(args.props) if args.props else dut.with_name(f"{args.top}.props.json")
         if not props_path.exists():
@@ -237,8 +237,8 @@ def _cmd_verify(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 2
-        from inductor.adapters.llm import ClaudeAdapter
-        from inductor.pipeline.synth import synthesize_properties
+        from toroid.adapters.llm import ClaudeAdapter
+        from toroid.pipeline.synth import synthesize_properties
 
         claude = ClaudeAdapter()
         classifier = claude  # reused for the refinement loop below
@@ -290,7 +290,7 @@ def _cmd_verify(args: argparse.Namespace) -> int:
 
 
 def _cmd_extract(args: argparse.Namespace) -> int:
-    from inductor.adapters.yosys import YosysCli, find_yosys
+    from toroid.adapters.yosys import YosysCli, find_yosys
 
     yosys_exe = find_yosys()
     if yosys_exe is None:
@@ -308,7 +308,7 @@ def _cmd_extract(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="inductor", description=__doc__)
+    parser = argparse.ArgumentParser(prog="toroid", description=__doc__)
     sub = parser.add_subparsers(dest="command")
 
     p_verify = sub.add_parser("verify", help="synthesize and discharge properties for a module")

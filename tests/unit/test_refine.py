@@ -9,13 +9,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
-from inductor.adapters.llm import CexCause, CexDiagnosis
-from inductor.adapters.sby import SbyJob, SbyRunResult
-from inductor.adapters.yosys import CompileResult
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import Property, PropertyKind
-from inductor.domain.trace import Trace
-from inductor.pipeline.refine import refine_property
+from toroid.adapters.llm import CexCause, CexDiagnosis
+from toroid.adapters.sby import SbyJob, SbyRunResult
+from toroid.adapters.yosys import CompileResult
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import Property, PropertyKind
+from toroid.domain.trace import Trace
+from toroid.pipeline.refine import refine_property
 
 
 def _iface() -> ModuleInterface:

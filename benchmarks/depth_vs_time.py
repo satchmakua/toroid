@@ -10,11 +10,11 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from inductor.adapters.sby import SbyJob
-from inductor.adapters.yosys import YosysCli, find_yosys
-from inductor.adapters.yosys_sat import YosysSatCli
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.render.checker import render_wrapper
+from toroid.adapters.sby import SbyJob
+from toroid.adapters.yosys import YosysCli, find_yosys
+from toroid.adapters.yosys_sat import YosysSatCli
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.render.checker import render_wrapper
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "benchmarks" / "out"
@@ -64,7 +64,7 @@ def plot(rows: list[tuple[int, float]], path: Path) -> bool:
     ax.plot(xs, ys, marker="o", color="#1565c0")
     ax.set_xlabel("BMC depth (cycles)")
     ax.set_ylabel("wall time (s)")
-    ax.set_title("Inductor — bounded proof time vs depth (counter, yosys-sat)")
+    ax.set_title("Toroid — bounded proof time vs depth (counter, yosys-sat)")
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)

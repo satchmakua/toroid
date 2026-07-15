@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.pipeline.equiv import _port_mismatch
-from inductor.render.equiv import render_equiv_wrapper
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.pipeline.equiv import _port_mismatch
+from toroid.render.equiv import render_equiv_wrapper
 
 
 def _iface(top: str = "max2") -> ModuleInterface:

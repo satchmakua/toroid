@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import pytest
 
-from inductor import __version__
-from inductor.cli import main
+from toroid import __version__
+from toroid.cli import main
 
 
 def test_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -21,7 +21,7 @@ def test_demo_runs_offline_and_renders_wrapper_and_report(
     assert main(["demo"]) == 0
     out = capsys.readouterr().out
     assert "module counter_fv (input clk);" in out  # the rendered wrapper
-    assert "Inductor report" in out  # the sample report
+    assert "Toroid report" in out  # the sample report
     assert "$anyseq" in out
 
 

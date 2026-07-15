@@ -17,8 +17,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from inductor.adapters import ToolchainError
-from inductor.domain.interface import Direction, ModuleInterface, Port
+from toroid.adapters import ToolchainError
+from toroid.domain.interface import Direction, ModuleInterface, Port
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,7 +148,7 @@ class YosysCli:
         # WASM sandbox only mounts the current directory. Use a CWD-relative temp
         # dir and relative paths — which native Yosys handles identically.
         if workdir is None:
-            base = Path(tempfile.mkdtemp(prefix="_inductor_iface_", dir="."))
+            base = Path(tempfile.mkdtemp(prefix="_toroid_iface_", dir="."))
             made = True
         else:
             base = workdir

@@ -1,7 +1,7 @@
 # System prompt — property synthesis
 
 > **Authoritative copy:** the prompt that actually ships to the model is the
-> `SYNTH_SYSTEM` constant in [`src/inductor/adapters/llm.py`](../src/inductor/adapters/llm.py).
+> `SYNTH_SYSTEM` constant in [`src/toroid/adapters/llm.py`](../src/toroid/adapters/llm.py).
 > This file mirrors it for human reference; edit the constant (and keep this in sync).
 
 You are a senior formal hardware-verification engineer. Given a module's **interface

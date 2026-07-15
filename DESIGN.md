@@ -1,11 +1,11 @@
-# Inductor — Design
+# Toroid — Design
 
 > An agent that reads a spec and RTL, synthesizes formal properties, runs a model checker, and iterates on counterexamples — automating the hardware-verification engineer's loop. The LLM proposes; the solver disposes. **Hallucination cannot pass verification.**
 
 **Status:** Design draft · **Language:** Python 3.11+ · **Stack target:** CLI + library, Linux / WSL2 (open formal toolchain) · **LLM:** Claude Opus 4.8
 
 
-> **Legal / licensing — clean for an open portfolio project (verified 2026-06-28).** Yosys and SymbiYosys are **ISC**; Bitwuzla is **MIT**; ABC is permissive (MIT-style). All ship together in the **OSS CAD Suite**. Yices is **GPLv3** — kept as an optional engine, never a default or a bundled dependency, so Inductor's own license stays unencumbered. Full SystemVerilog Assertion (SVA) parsing requires the commercial **Verific** frontend (Tabby CAD Suite); Inductor v1 deliberately targets the **free** open frontend and the assertion subset it supports (see §4). No vendor RTL or IP is redistributed — only original sample designs.
+> **Legal / licensing — clean for an open portfolio project (verified 2026-06-28).** Yosys and SymbiYosys are **ISC**; Bitwuzla is **MIT**; ABC is permissive (MIT-style). All ship together in the **OSS CAD Suite**. Yices is **GPLv3** — kept as an optional engine, never a default or a bundled dependency, so Toroid's own license stays unencumbered. Full SystemVerilog Assertion (SVA) parsing requires the commercial **Verific** frontend (Tabby CAD Suite); Toroid v1 deliberately targets the **free** open frontend and the assertion subset it supports (see §4). No vendor RTL or IP is redistributed — only original sample designs.
 
 ---
 
@@ -13,15 +13,15 @@
 
 A hardware-verification engineer's inner loop looks like this: read the spec and the RTL, decide what *must always be true*, write those properties as assertions, run a model checker, stare at the counterexample waveform when it fails, decide whether the bug is in the design or the property, fix it, and re-run. It is slow, senior, scarce work — and almost untouched by modern AI tooling.
 
-Inductor closes that loop. Point it at a small Verilog module and a natural-language spec:
+Toroid closes that loop. Point it at a small Verilog module and a natural-language spec:
 
 ```
-$ inductor verify designs/fifo.v --spec designs/fifo.md --top fifo --depth 20
+$ toroid verify designs/fifo.v --spec designs/fifo.md --top fifo --depth 20
 ```
 
 It extracts the module's true interface from Yosys, asks Claude to propose safety properties grounded in that interface and the spec, renders them into a Yosys-checkable formal wrapper, and discharges them with SymbiYosys. For each property it returns one of: **PROVEN** (unbounded, via k-induction or IC3/PDR), **BOUNDED-PASS** (no counterexample within depth *k*), or **FALSIFIED** with a concrete waveform. On a falsification it parses the trace, narrates the failing cycle, classifies the cause (RTL bug / over-strong property / missing assumption), patches, and re-runs until stable — then writes a report where **every claim is tied to a solver verdict, never to the model's say-so**.
 
-The demo that lands: a FIFO with an injected off-by-one in its full/empty logic. Inductor synthesizes "never overflow / never underflow," gets a counterexample waveform, narrates the exact failing cycle, names the bug — then proves the property holds on the fixed version. One screenshot of *proven-or-waveform on real RTL* communicates the entire value.
+The demo that lands: a FIFO with an injected off-by-one in its full/empty logic. Toroid synthesizes "never overflow / never underflow," gets a counterexample waveform, narrates the exact failing cycle, names the bug — then proves the property holds on the fixed version. One screenshot of *proven-or-waveform on real RTL* communicates the entire value.
 
 ### Engineering pillars (the three things that make or break this)
 
@@ -50,12 +50,12 @@ The demo that lands: a FIFO with an injected off-by-one in its full/empty logic.
 - **Full concurrent SVA** (sequences, `throughout`, complex `|->` temporal layers). Requires the commercial Verific frontend. *Roadmap; v1 uses the supported subset (§4).*
 - **Full-chip / large industrial IP / multi-clock CDC.** v1 is single-clock, small modules.
 - **Liveness / fairness at scale.** SymbiYosys supports liveness, but robust liveness verification is a separate hard problem. *Out of v1; safety only.*
-- **Dynamic simulation / UVM / coverage closure on real designs.** Inductor is formal-only.
+- **Dynamic simulation / UVM / coverage closure on real designs.** Toroid is formal-only.
 - **Security / side-channel / fault properties.** Roadmap.
 - **Floating-point, analog, gate-level, timing.** Bit-vector + array (memory) logic only.
 - **A GUI.** CLI + report artifacts only. (SymbiYosys has `sby-gui`; not our surface.)
-- **Auto-fixing the RTL.** Inductor diagnoses and pinpoints; it does not rewrite the design under test. It *may* refine its own properties/assumptions.
-- **Synthesizing the design.** Inductor verifies RTL it is given; it does not author DUTs.
+- **Auto-fixing the RTL.** Toroid diagnoses and pinpoints; it does not rewrite the design under test. It *may* refine its own properties/assumptions.
+- **Synthesizing the design.** Toroid verifies RTL it is given; it does not author DUTs.
 
 ---
 
@@ -94,7 +94,7 @@ The free Yosys frontend (no Verific) supports, under `read_verilog -formal`:
 - Formal helper functions: `$past(e, n)`, `$rose`, `$fell`, `$stable`, `$changed`, `$initstate`, `$anyconst`, `$anyseq`, `$allconst`, `$allseq`, `$global_clock`.
 - A *limited* slice of concurrent `assert property (@(posedge clk) ...)` with simple `|->` / `|=>` — **not relied upon**.
 
-**Decision:** Inductor's canonical render target is **immediate assertions inside a clocked `always` block** (the ZipCPU / SymbiYosys idiom), using `$past`/`$rose`/`$stable` for multi-cycle behavior and `$anyseq`/`$anyconst` for symbolic stimulus. This is the universally-supported, portable form. The LLM is constrained to emit *only* this subset; the compile gate (§6.1) rejects anything else before it can reach a solver. Full SVA is a documented Verific-only upgrade (roadmap), never a v1 dependency.
+**Decision:** Toroid's canonical render target is **immediate assertions inside a clocked `always` block** (the ZipCPU / SymbiYosys idiom), using `$past`/`$rose`/`$stable` for multi-cycle behavior and `$anyseq`/`$anyconst` for symbolic stimulus. This is the universally-supported, portable form. The LLM is constrained to emit *only* this subset; the compile gate (§6.1) rejects anything else before it can reach a solver. Full SVA is a documented Verific-only upgrade (roadmap), never a v1 dependency.
 
 Properties are bound to the DUT via a generated **formal wrapper** `<top>_fv` that instantiates the DUT, drives free inputs with `$anyseq`, and holds the assertions — rather than relying on SystemVerilog `bind`, which the open frontend supports inconsistently.
 
@@ -227,15 +227,15 @@ class PropertyResult:
 **Repo layout:**
 
 ```
-inductor/
+toroid/
   pyproject.toml
   README.md  DESIGN.md  ROADMAP.md
-  src/inductor/
+  src/toroid/
     domain/      interface.py  properties.py  verdicts.py  policy.py   # pure, no I/O
     adapters/    yosys.py  sby.py  witness.py  llm.py                  # external systems
     render/      checker.py                                           # PropertySet → *_fv.sv
     pipeline/    synth.py  discharge.py  refine.py  report.py
-    cli.py                                                            # `inductor verify ...`
+    cli.py                                                            # `toroid verify ...`
   designs/       counter.v  fifo.v  fifo_buggy.v  arbiter.v  fsm.v + *.md specs
   prompts/       synth.system.md  classify.system.md  fewshot/*.sv
   tests/         unit/ (mocked) + integration/ (real sby on designs/)
@@ -324,7 +324,7 @@ class CexDiagnosis:
     proposed_patch: Property | None
 ```
 
-**Termination guarantee:** at most `--max-refine` rounds (default **5**); each round must change the property set; an RTL_BUG verdict is terminal (Inductor does not edit the DUT). **Anti-vacuity:** after any property/assumption refinement, the companion COVER must still be reachable, or the patch is rejected as cheating and the round is recorded as such.
+**Termination guarantee:** at most `--max-refine` rounds (default **5**); each round must change the property set; an RTL_BUG verdict is terminal (Toroid does not edit the DUT). **Anti-vacuity:** after any property/assumption refinement, the companion COVER must still be reachable, or the patch is rejected as cheating and the round is recorded as such.
 
 ### 6.5 Report (`pipeline/report.py`)
 
@@ -333,9 +333,9 @@ Aggregates `PropertyResult[]` into Markdown + JSON: a verdict table (property, v
 ### 6.6 CLI (`cli.py`)
 
 ```
-inductor verify <rtl...> --spec <md> --top <name> [--depth 20] [--max-refine 5]
+toroid verify <rtl...> --spec <md> --top <name> [--depth 20] [--max-refine 5]
                          [--engine bitwuzla|abc-pdr|z3] [--no-llm] [--report out.md]
-inductor extract <rtl...> --top <name>          # just the interface model (debug)
+toroid extract <rtl...> --top <name>          # just the interface model (debug)
 ```
 `--no-llm` runs with a hand-written property file — the M0 path and the deterministic test path.
 
@@ -345,7 +345,7 @@ inductor extract <rtl...> --top <name>          # just the interface model (debu
 
 Top-down, each independently runnable; counts are budgets, not promises.
 
-- **M0 — Walking skeleton & it runs.** `inductor verify designs/counter.v --top counter --no-llm` wires ingest → render (a *hand-written* property) → sby → verdict → report end-to-end on a real module. Proves the harness + verdict parsing + `.yw`/VCD collection on real RTL. *Demonstrates:* the airtight ground-truth pipeline, no LLM yet.
+- **M0 — Walking skeleton & it runs.** `toroid verify designs/counter.v --top counter --no-llm` wires ingest → render (a *hand-written* property) → sby → verdict → report end-to-end on a real module. Proves the harness + verdict parsing + `.yw`/VCD collection on real RTL. *Demonstrates:* the airtight ground-truth pipeline, no LLM yet.
 
 - **M1 — Property synthesis (credibility milestone).** LLM generates a `PropertySet` from the interface model + spec; compile gate + repair loop; discharge; report PROVEN / BOUNDED-PASS / FALSIFIED with vacuity checks. *Demonstrates:* the differentiating claim — AI writes properties a solver then judges. **First public-ship point.**
 

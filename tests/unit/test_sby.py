@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from inductor.adapters.sby import SbyJob, build_sby_file, parse_sby_output
+from toroid.adapters.sby import SbyJob, build_sby_file, parse_sby_output
 
 # --- builder -------------------------------------------------------------------
 

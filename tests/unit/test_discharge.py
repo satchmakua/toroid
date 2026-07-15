@@ -9,13 +9,13 @@ from collections.abc import Callable, Sequence
 from dataclasses import replace
 from pathlib import Path
 
-from inductor.adapters.sby import SbyJob, SbyRunResult
-from inductor.adapters.yosys import CompileResult
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.domain.trace import Trace
-from inductor.domain.verdicts import PropertyResult, Verdict
-from inductor.pipeline.discharge import discharge
+from toroid.adapters.sby import SbyJob, SbyRunResult
+from toroid.adapters.yosys import CompileResult
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.trace import Trace
+from toroid.domain.verdicts import PropertyResult, Verdict
+from toroid.pipeline.discharge import discharge
 
 
 def _iface() -> ModuleInterface:

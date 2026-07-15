@@ -5,7 +5,7 @@ is exercised directly by unit tests (DESIGN.md pillar #1).
 
 from __future__ import annotations
 
-from inductor.domain.verdicts import RawOutcome, Verdict
+from toroid.domain.verdicts import RawOutcome, Verdict
 
 #: Default bounded-model-checking depth when the user does not pass --depth.
 DEFAULT_BMC_DEPTH = 20

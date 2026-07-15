@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from inductor.adapters.yosys import parse_write_json
+from toroid.adapters.yosys import parse_write_json
 
 # A trimmed but faithful `write_json` payload for designs/counter.v (post-`proc`).
 COUNTER_JSON = {

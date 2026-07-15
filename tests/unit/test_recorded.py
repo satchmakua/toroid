@@ -9,12 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from inductor.adapters.llm import CexCause, CexDiagnosis
-from inductor.adapters.recorded import RecordedLLM, diagnosis_from_dict, diagnosis_to_dict
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.domain.trace import Trace
-from inductor.loaders import property_set_to_dict
+from toroid.adapters.llm import CexCause, CexDiagnosis
+from toroid.adapters.recorded import RecordedLLM, diagnosis_from_dict, diagnosis_to_dict
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.trace import Trace
+from toroid.loaders import property_set_to_dict
 
 
 def _iface() -> ModuleInterface:

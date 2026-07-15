@@ -27,10 +27,10 @@ import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 
-from inductor.adapters import ToolchainError
-from inductor.adapters.sby import SbyJob, SbyMode, SbyRunResult, SbyStatus
-from inductor.adapters.yosys import find_yosys
-from inductor.domain.trace import Trace, _Builder
+from toroid.adapters import ToolchainError
+from toroid.adapters.sby import SbyJob, SbyMode, SbyRunResult, SbyStatus
+from toroid.adapters.yosys import find_yosys
+from toroid.domain.trace import Trace, _Builder
 
 ENGINE = "yosys-sat (minisat)"
 

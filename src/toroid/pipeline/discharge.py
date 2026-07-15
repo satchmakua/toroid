@@ -17,14 +17,14 @@ import time
 from collections.abc import Sequence
 from pathlib import Path
 
-from inductor.adapters.sby import SbyJob, SbyJobRunner, SbyMode, SbyRunResult
-from inductor.adapters.yosys import YosysAdapter
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.policy import decide_verdict
-from inductor.domain.properties import Property, PropertySet
-from inductor.domain.trace import summarize_trace
-from inductor.domain.verdicts import PropertyResult, RawOutcome, Verdict
-from inductor.render.checker import render_wrapper
+from toroid.adapters.sby import SbyJob, SbyJobRunner, SbyMode, SbyRunResult
+from toroid.adapters.yosys import YosysAdapter
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.policy import decide_verdict
+from toroid.domain.properties import Property, PropertySet
+from toroid.domain.trace import summarize_trace
+from toroid.domain.verdicts import PropertyResult, RawOutcome, Verdict
+from toroid.render.checker import render_wrapper
 
 SMT = "smtbmc bitwuzla"
 PDR = "abc pdr"

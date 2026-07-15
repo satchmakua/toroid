@@ -12,14 +12,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from inductor.adapters.llm import ClaudeAdapter
-from inductor.adapters.recorded import write_classify_fixture
-from inductor.adapters.yosys import YosysCli, find_yosys
-from inductor.adapters.yosys_sat import YosysSatCli
-from inductor.domain.properties import Property, PropertyKind
-from inductor.loaders import load_property_set, property_set_to_dict
-from inductor.pipeline.discharge import discharge_assert
-from inductor.pipeline.synth import synthesize_properties
+from toroid.adapters.llm import ClaudeAdapter
+from toroid.adapters.recorded import write_classify_fixture
+from toroid.adapters.yosys import YosysCli, find_yosys
+from toroid.adapters.yosys_sat import YosysSatCli
+from toroid.domain.properties import Property, PropertyKind
+from toroid.loaders import load_property_set, property_set_to_dict
+from toroid.pipeline.discharge import discharge_assert
+from toroid.pipeline.synth import synthesize_properties
 
 REPO = Path(__file__).resolve().parents[1]
 FIX = REPO / "tests" / "fixtures"

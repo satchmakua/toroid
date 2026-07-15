@@ -7,7 +7,7 @@ outputs** (a Pydantic schema) so the response is schema-valid by construction; t
 `anthropic` import is lazy so the pure pipeline never depends on it.
 
 Model defaults (verified against the Anthropic API docs, 2026-06-28):
-  model    = "claude-opus-4-8"   (override via INDUCTOR_MODEL)
+  model    = "claude-opus-4-8"   (override via TOROID_MODEL)
   thinking = {"type": "adaptive"}   # no budget_tokens (400 on 4.8)
   no assistant prefill (rejected on 4.8) — structure comes from the schema.
 """
@@ -21,9 +21,9 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel
 
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.domain.trace import Trace, summarize_trace
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.trace import Trace, summarize_trace
 
 DEFAULT_MODEL = "claude-opus-4-8"
 
@@ -78,7 +78,7 @@ signal values from the model checker). Narrate the failing behavior cycle by cyc
 then classify the root cause as exactly one of:
 
 - rtl_bug: the design violates a property that is correct as written. TERMINAL —
-  Inductor does not edit the design. No patch.
+  Toroid does not edit the design. No patch.
 - over_strong: the property is too strict / wrong. Propose a corrected `assert`
   (kind="assert") that captures the real intent and would hold.
 - missing_assumption: the property assumed an environment constraint that wasn't
@@ -197,7 +197,7 @@ class ClaudeAdapter:
     """Property synthesis backed by the Anthropic SDK (structured outputs)."""
 
     def __init__(self, model: str | None = None, max_tokens: int = 16000) -> None:
-        self.model = model or os.environ.get("INDUCTOR_MODEL") or DEFAULT_MODEL
+        self.model = model or os.environ.get("TOROID_MODEL") or DEFAULT_MODEL
         self.max_tokens = max_tokens
         self._client: object | None = None
 

@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from inductor.adapters.yosys import find_yosys
-from inductor.domain.verdicts import PropertyResult, Verdict
+from toroid.adapters.yosys import find_yosys
+from toroid.domain.verdicts import PropertyResult, Verdict
 
 pytestmark = [
     pytest.mark.integration,
@@ -22,9 +22,9 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _equiv(file_b: str, top_b: str) -> PropertyResult:
-    from inductor.adapters.yosys import YosysCli
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.pipeline.equiv import check_equivalence
+    from toroid.adapters.yosys import YosysCli
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.pipeline.equiv import check_equivalence
 
     exe = find_yosys()
     assert exe is not None

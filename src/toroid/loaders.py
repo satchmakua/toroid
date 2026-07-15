@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from inductor.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.properties import Property, PropertyKind, PropertySet
 
 _VALID_KINDS = {k.value for k in PropertyKind}
 

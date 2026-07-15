@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from inductor.adapters.yosys import find_yosys
-from inductor.domain.verdicts import Verdict
+from toroid.adapters.yosys import find_yosys
+from toroid.domain.verdicts import Verdict
 
 pytestmark = [
     pytest.mark.integration,
@@ -24,11 +24,11 @@ FIX = REPO / "tests" / "fixtures"
 
 
 def test_recorded_synthesis_compiles_and_proves() -> None:
-    from inductor.adapters.recorded import RecordedLLM
-    from inductor.adapters.yosys import YosysCli
-    from inductor.adapters.yosys_sat import YosysSatCli
-    from inductor.pipeline.discharge import discharge
-    from inductor.pipeline.synth import synthesize_properties
+    from toroid.adapters.recorded import RecordedLLM
+    from toroid.adapters.yosys import YosysCli
+    from toroid.adapters.yosys_sat import YosysSatCli
+    from toroid.pipeline.discharge import discharge
+    from toroid.pipeline.synth import synthesize_properties
 
     exe = find_yosys()
     assert exe is not None

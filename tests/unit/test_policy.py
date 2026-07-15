@@ -5,8 +5,8 @@ whole thesis collapses. These tests pin every branch of the taxonomy.
 
 from __future__ import annotations
 
-from inductor.domain.policy import decide_verdict
-from inductor.domain.verdicts import RawOutcome, Verdict
+from toroid.domain.policy import decide_verdict
+from toroid.domain.verdicts import RawOutcome, Verdict
 
 
 def test_unbounded_pass_with_reachable_cover_is_proven() -> None:

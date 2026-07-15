@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from inductor.adapters import toolchain_status
-from inductor.domain.verdicts import Verdict
+from toroid.adapters import toolchain_status
+from toroid.domain.verdicts import Verdict
 
 pytestmark = [
     pytest.mark.integration,
@@ -22,10 +22,10 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _discharge(props_name: str, tmp_path: Path) -> dict[str, Verdict]:
-    from inductor.adapters.sby import SbyCli
-    from inductor.adapters.yosys import YosysCli
-    from inductor.loaders import load_property_set
-    from inductor.pipeline.discharge import discharge
+    from toroid.adapters.sby import SbyCli
+    from toroid.adapters.yosys import YosysCli
+    from toroid.loaders import load_property_set
+    from toroid.pipeline.discharge import discharge
 
     dut = REPO / "designs" / "counter.v"
     yosys = YosysCli()

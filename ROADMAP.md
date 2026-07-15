@@ -1,4 +1,4 @@
-# ROADMAP — Inductor
+# ROADMAP — Toroid
 
 The milestone checklist.
 
@@ -25,7 +25,7 @@ The milestone checklist.
   verdict, policy), the `PropertySet → *_fv.sv` renderer, the Markdown report, and a
   CLI (`demo` / `verify` / `extract` / `version`) — all running with no external
   toolchain. Lint, typecheck, and a real test suite are wired and green.
-  **Test:** `pip install -e ".[dev]"` then `inductor demo` prints a rendered wrapper
+  **Test:** `pip install -e ".[dev]"` then `toroid demo` prints a rendered wrapper
   and a sample report; `pytest` is green; `ruff check . && mypy` clean.
 
 ## Phase 1 — The harness (ground truth)
@@ -35,7 +35,7 @@ The milestone checklist.
   checked-in property file. Two discharge backends: **`yosys-sat`** (Yosys built-in
   minisat — no external solver, runs via `pip install yowasp-yosys`) and **`sby`**
   (SymbiYosys + Bitwuzla, OSS CAD Suite). _(= DESIGN M0.)_
-  **Test:** `inductor verify designs/counter.v --top counter --no-llm` reports the
+  **Test:** `toroid verify designs/counter.v --top counter --no-llm` reports the
   invariants as PROVEN; with `--props designs/counter_bad.props.json` it reports
   FALSIFIED with a `.vcd`. ✅ **Confirmed live** (yosys-sat via yowasp, Windows):
   `pytest -m integration` green; CLI reports P1/P2 PROVEN and the bad property
@@ -49,7 +49,7 @@ The milestone checklist.
   synthesis (Claude, structured outputs / Pydantic) + `pipeline/synth.py` compile-gate
   + anti-vacuity **repair loop** (feeds Yosys diagnostics back to the model, up to
   `--max-repairs`). Wired into `verify` (drop `--no-llm`). _(= DESIGN M1.)_
-  **Test:** `inductor verify designs/counter.v --spec designs/counter.md --top
+  **Test:** `toroid verify designs/counter.v --spec designs/counter.md --top
   counter` synthesizes properties that compile and discharge; the report shows real
   verdicts with provenance. ✅ **Confirmed live** (2026-07-13, `claude-opus-4-8`):
   Claude synthesized a real, guarded property set (reset, saturation, hold, increment,
@@ -99,7 +99,7 @@ The milestone checklist.
 
 - [x] **M5 (stretch) — RTL-to-RTL equivalence.** `render/equiv.py` (a miter: shared
   symbolic inputs, both DUTs, assert outputs equal) + `pipeline/equiv.py`
-  (`check_equivalence`, port-compatibility check) + `inductor equiv` CLI. Designs:
+  (`check_equivalence`, port-compatibility check) + `toroid equiv` CLI. Designs:
   `max2.v` (spec), `max2_alt.v` (equivalent), `max2_min_bug.v` (impostor). _(= DESIGN M4.)_
   **Test:** equivalent pair proves; divergent pair produces a distinguishing input.
   ✅ **Confirmed live** (yosys-sat): `max2 ≡ max2_alt` PROVEN; `max2` vs
@@ -135,7 +135,7 @@ glance.
 6. **Polished** — no stray files, consistent docs, README opens with the artifact.
 7. **Positioned** — one paragraph: who it's for, what it beats, why this not the obvious alternative.
 
-**Hardening items (Inductor-specific):**
+**Hardening items (Toroid-specific):**
 - [x] **H1 — Live LLM proof + offline fixture.** ✅ Done (2026-07-13). M2 synthesis ran
   **live** (`claude-opus-4-8`): Claude synthesized a guarded property set that compiled
   first-try — the recorded fixture holds 9 properties (5 asserts + 4 covers) and all 5

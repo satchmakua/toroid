@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.verdicts import PropertyResult, Verdict
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.verdicts import PropertyResult, Verdict
 
 _BADGE = {
     Verdict.PROVEN: "✅ PROVEN",
@@ -27,7 +27,7 @@ def badge(verdict: Verdict) -> str:
 def render_report(interface: ModuleInterface, results: Sequence[PropertyResult]) -> str:
     """Render a verdict table + per-property detail as Markdown."""
     lines: list[str] = []
-    lines.append(f"# Inductor report — `{interface.top}`")
+    lines.append(f"# Toroid report — `{interface.top}`")
     lines.append("")
     lines.append("| Property | Verdict | Engine | Depth | Time (s) |")
     lines.append("|---|---|---|---|---|")

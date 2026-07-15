@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from inductor.adapters.yosys import CompileResult
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import Property, PropertyKind, PropertySet
-from inductor.pipeline.synth import synthesize_properties
+from toroid.adapters.yosys import CompileResult
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.pipeline.synth import synthesize_properties
 
 
 def _iface() -> ModuleInterface:

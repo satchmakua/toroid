@@ -4,7 +4,7 @@ Pure — exercises no network (the `anthropic` client is never constructed).
 
 from __future__ import annotations
 
-from inductor.adapters.llm import (
+from toroid.adapters.llm import (
     CexCause,
     _CexOut,
     _diag_to_domain,
@@ -14,8 +14,8 @@ from inductor.adapters.llm import (
     _to_domain,
     render_interface,
 )
-from inductor.domain.interface import ModuleInterface, Port
-from inductor.domain.properties import PropertyKind
+from toroid.domain.interface import ModuleInterface, Port
+from toroid.domain.properties import PropertyKind
 
 
 def test_schema_converts_to_domain_property_set() -> None:

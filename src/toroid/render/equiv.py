@@ -8,7 +8,7 @@ distinguishing input — the hardware sibling of Congruent's software equivalenc
 
 from __future__ import annotations
 
-from inductor.domain.interface import ModuleInterface, Port
+from toroid.domain.interface import ModuleInterface, Port
 
 _INDENT = "    "
 
@@ -25,7 +25,7 @@ def render_equiv_wrapper(
     outputs = interface.outputs()
 
     lines = [
-        f"// Auto-generated equivalence miter: {top_a} vs {top_b} — Inductor.",
+        f"// Auto-generated equivalence miter: {top_a} vs {top_b} — Toroid.",
         f"module equiv_fv (input {clk});",
     ]
     for p in inputs:

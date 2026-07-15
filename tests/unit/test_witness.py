@@ -4,8 +4,8 @@ Pure — exercises the real model-table format with no toolchain.
 
 from __future__ import annotations
 
-from inductor.adapters.yosys_sat import parse_sat_model
-from inductor.domain.trace import Trace, summarize_trace
+from toroid.adapters.yosys_sat import parse_sat_model
+from toroid.domain.trace import Trace, summarize_trace
 
 # Real `sat -show-all` row shape: "<step>  \<name>  <dec>  <hex>  <bin>".
 MODEL = """\

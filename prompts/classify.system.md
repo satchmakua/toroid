@@ -6,7 +6,7 @@ Yosys `.yw` witness). Narrate the failing behavior cycle by cycle, then classify
 root cause as exactly one of:
 
 - **`rtl_bug`** — the design violates a correct property. *Terminal:* report and
-  stop; Inductor does not edit the DUT.
+  stop; Toroid does not edit the DUT.
 - **`over_strong`** — the property is too strict / wrong. Propose a tightened or
   corrected property.
 - **`missing_assumption`** — the environment needs a constraint (e.g. an input

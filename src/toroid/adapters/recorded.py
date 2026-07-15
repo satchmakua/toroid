@@ -13,11 +13,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from inductor.adapters.llm import CexCause, CexDiagnosis
-from inductor.domain.interface import ModuleInterface
-from inductor.domain.properties import Property, PropertySet
-from inductor.domain.trace import Trace
-from inductor.loaders import load_property_set, property_from_dict, property_to_dict
+from toroid.adapters.llm import CexCause, CexDiagnosis
+from toroid.domain.interface import ModuleInterface
+from toroid.domain.properties import Property, PropertySet
+from toroid.domain.trace import Trace
+from toroid.loaders import load_property_set, property_from_dict, property_to_dict
 
 
 def diagnosis_to_dict(d: CexDiagnosis) -> dict[str, Any]:
