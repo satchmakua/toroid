@@ -68,9 +68,14 @@ step |  rst  wr_en  rd_en  full  empty  count
   19 |   0     0      0      0     1      0    ← counterexample ends
 ```
 
-On the yosys-sat backend the counterexample lands at the unconstrained initial state,
-because this backend can't apply the reset assumption (ADR-0004); the reset-driven
-temporal overflow story is the sby-backend path (roadmap H2).
+On the lightweight yosys-sat backend the counterexample lands at the unconstrained
+initial state, because that backend ignores `assume` cells (ADR-0004). The **`sby` +
+Bitwuzla backend lifts that limit and is live and green in CI** (`--backend sby`): it
+honors assumptions and discharges covers, so assume-dependent properties prove and a
+pass whose witness is unreachable is caught as `VACUOUS` — see
+[`designs/counter_assume.props.json`](designs/counter_assume.props.json) and
+[`designs/counter_vacuous.props.json`](designs/counter_vacuous.props.json), which the
+`formal-sby` CI job runs on every push.
 
 **3 — It proves (or disproves) RTL-to-RTL equivalence.** A miter with shared symbolic
 inputs — the hardware sibling of *Congruent*:
@@ -91,6 +96,31 @@ The solver runs (2, 3, and the bug-catch chart) need nothing but `pip install` (
 via `yowasp-yosys`) and run on Windows; the live-LLM synthesis in (1) needs an
 `ANTHROPIC_API_KEY`, and its output is recorded as a fixture so CI replays the AI path
 with no key.
+
+---
+
+## What it can't do
+
+The honest limits, so the claims above aren't read wider than they are:
+
+- **No full concurrent SVA.** Properties use the open-Yosys subset (immediate assertions
+  + `$past`/`$rose`/`$stable`/`$anyseq`/`$anyconst`). Sequences and the full temporal
+  layer need the commercial Verific frontend — a deliberate non-goal (ADR-0002).
+- **Small, single-clock modules.** Counter/FIFO/arbiter scale (≲500 lines). No multi-clock
+  or CDC, no full-chip, no industrial IP.
+- **Safety properties only** — no liveness or fairness.
+- **The two backends trade off, and neither is strictly better.** `yosys-sat` narrates
+  counterexamples cycle-by-cycle but **ignores `assume` cells** (ADR-0004). `sby` honors
+  assumptions and catches vacuity, but reports a counterexample as a trace-file path
+  **without** the inline cycle table (the `.yw`/VCD reader is still a stub).
+- **It never edits your RTL.** An `rtl_bug` verdict is terminal: Toroid diagnoses and
+  pinpoints, it does not rewrite the design under test.
+- **LLM synthesis is non-deterministic.** A live re-run may propose a different (still
+  gated) property set; the committed fixture is the pinned, reproducible artifact.
+- **The benchmarks are illustrative, not a benchmark claim.** Three tiny designs, no
+  confidence intervals and no named external baseline — they show the flow works and the
+  bug is caught, nothing more.
+- No floating-point, analog, gate-level, or timing verification.
 
 ---
 

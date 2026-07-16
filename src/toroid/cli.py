@@ -325,11 +325,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument(
         "--no-refine", action="store_true", help="skip the LLM counterexample-refinement loop"
     )
-    p_verify.add_argument("--engine", default="bitwuzla", help="solver engine (sby backend)")
     p_verify.add_argument(
         "--backend", choices=("auto", "sby", "yosys-sat"), default="auto",
-        help="discharge backend: 'sby' (SymbiYosys+Bitwuzla, needs OSS CAD Suite) or "
-        "'yosys-sat' (built-in minisat, Yosys-only). auto picks sby if available.",
+        help="discharge backend. 'sby' (SymbiYosys+Bitwuzla, needs the OSS CAD Suite) "
+        "honors assume cells and discharges covers, so it can prove assume-dependent "
+        "properties and catch VACUOUS passes — but its counterexamples are reported as a "
+        "trace-file path, without the inline cycle table. 'yosys-sat' (built-in minisat, "
+        "Yosys-only) ignores assume cells (ADR-0004) but narrates counterexamples "
+        "cycle-by-cycle. auto picks sby when it is on PATH, else yosys-sat.",
     )
     p_verify.add_argument("--no-llm", action="store_true", help="use a hand-written property file")
     p_verify.add_argument("--props", help="property file (JSON); default: <top>.props.json")

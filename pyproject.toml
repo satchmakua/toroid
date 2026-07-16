@@ -15,7 +15,9 @@ keywords = ["formal-verification", "model-checking", "rtl", "yosys", "symbiyosys
 dependencies = [
     "anthropic>=0.69,<1.0",   # property synthesis + CEX classification
     "pydantic>=2.7,<3.0",     # structured-output schemas
-    "vcdvcd>=2.3",            # human-facing VCD waveform reading
+    # NOTE: no VCD reader is a runtime dep — the yosys-sat backend parses Yosys's own
+    # `sat` model table, and adapters/witness.py (the .yw/VCD reader) is still a stub.
+    # Add one back only when that lands, so a plain install stays lean.
 ]
 
 [project.optional-dependencies]

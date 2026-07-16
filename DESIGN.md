@@ -2,7 +2,7 @@
 
 > An agent that reads a spec and RTL, synthesizes formal properties, runs a model checker, and iterates on counterexamples — automating the hardware-verification engineer's loop. The LLM proposes; the solver disposes. **Hallucination cannot pass verification.**
 
-**Status:** Design draft · **Language:** Python 3.11+ · **Stack target:** CLI + library, Linux / WSL2 (open formal toolchain) · **LLM:** Claude Opus 4.8
+**Status:** Implemented — M0–M5 and hardening H1–H4 shipped; see [ROADMAP.md](ROADMAP.md) for the acceptance tests · **Language:** Python 3.11+ · **Stack target:** CLI + library; the yosys-sat path runs anywhere (incl. Windows) via `yowasp-yosys`, the `sby` backend targets Linux/WSL2 · **LLM:** Claude Opus 4.8
 
 
 > **Legal / licensing — clean for an open portfolio project (verified 2026-06-28).** Yosys and SymbiYosys are **ISC**; Bitwuzla is **MIT**; ABC is permissive (MIT-style). All ship together in the **OSS CAD Suite**. Yices is **GPLv3** — kept as an optional engine, never a default or a bundled dependency, so Toroid's own license stays unencumbered. Full SystemVerilog Assertion (SVA) parsing requires the commercial **Verific** frontend (Tabby CAD Suite); Toroid v1 deliberately targets the **free** open frontend and the assertion subset it supports (see §4). No vendor RTL or IP is redistributed — only original sample designs.
@@ -75,7 +75,7 @@ The demo that lands: a FIFO with an injected off-by-one in its full/empty logic.
 | LLM | **Anthropic Python SDK**, `claude-opus-4-8` | Adaptive thinking (`thinking={"type":"adaptive"}`), `effort:"high"`. Property synthesis and CEX classification use **structured outputs** (`messages.parse()` + Pydantic) so output is schema-valid by construction. (Verified against the Anthropic API docs, 2026-06-28.) |
 | Trace/VCD reader (display) | **`vcdvcd`** | Lightweight, maintained VCD reader for rendering human-facing waveforms; primary trace parse is `.yw`. |
 | Charts (benchmarks) | **matplotlib** | Proof-depth-vs-time and bug-catch-rate plots for the demo. |
-| CI | **GitHub Actions** + `YosysHQ/setup-oss-cad-suite@v3` | One-line toolchain in CI; Linux runner. |
+| CI | **GitHub Actions** + `YosysHQ/setup-oss-cad-suite@v4` | One-line toolchain in CI; Linux runner. |
 | Test | **pytest** | Domain layer unit-tested with the toolchain mocked; integration tests run real `sby` on sample designs. |
 
 **Platform note (assumption, not a question):** the open formal stack is Linux-native and most reliable there. The author's machine is Windows 11, so the primary dev environment is **WSL2 (Ubuntu) + OSS CAD Suite**, and CI runs on Linux. The Python package itself is OS-agnostic — it shells out to the toolchain — but the toolchain is assumed to be on a Linux-like PATH. Native-Windows OSS CAD Suite builds exist as a fallback but are not the supported path.
@@ -376,7 +376,7 @@ Top-down, each independently runnable; counts are budgets, not promises.
 - **SymbiYosys docs** — flows, `.sby` reference, install. https://symbiyosys.readthedocs.io/ *(verified 2026-06-28; free OSS frontend supports immediate assertions only; full SVA needs Tabby CAD / Verific)*
 - **Yosys docs** — `read_verilog -formal`, formal system functions (`$past`/`$anyconst`/…), `write_json` port/width export. https://yosyshq.readthedocs.io/projects/yosys/ *(verified 2026-06-28)*
 - **OSS CAD Suite** — bundled Yosys + sby + Bitwuzla + ABC. https://github.com/YosysHQ/oss-cad-suite-build *(verified 2026-06-28)*
-- **setup-oss-cad-suite** — CI action (`@v3`). https://github.com/YosysHQ/setup-oss-cad-suite *(verified 2026-06-28)*
+- **setup-oss-cad-suite** — CI action (`@v4`). https://github.com/YosysHQ/setup-oss-cad-suite *(verified 2026-06-28)*
 - **Bitwuzla** (MIT) — bit-vector/array SMT solver, Boolector successor, SMT-COMP winner. https://bitwuzla.github.io/ *(verified 2026-06-28)*
 - **Yosys `smtbmc.py` / `ywio`** — witness `.yw` read/write classes for trace parsing. https://github.com/YosysHQ/yosys/blob/main/backends/smt2/smtbmc.py *(verified 2026-06-28)*
 - **Anthropic API docs** — `claude-opus-4-8`, adaptive thinking, structured outputs via `messages.parse()`. *(consulted 2026-06-28)*

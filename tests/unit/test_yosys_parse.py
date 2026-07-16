@@ -64,3 +64,35 @@ def test_active_low_reset_name() -> None:
 def test_missing_top_raises() -> None:
     with pytest.raises(KeyError, match="nope"):
         parse_write_json(COUNTER_JSON, "nope")
+
+
+@pytest.mark.parametrize(
+    ("reset_name", "expect_active_high"),
+    [
+        ("rst_n", False),      # conventional active-low spellings
+        ("reset_n", False),
+        ("rstn", False),
+        ("resetn", False),
+        ("rst_b", False),
+        ("rst", True),         # plain active-high
+        ("reset", True),
+        ("rst_in", True),      # merely ENDS in "n" — active-HIGH, must not over-fire
+        ("reset_in", True),
+    ],
+)
+def test_reset_polarity_detection(reset_name: str, expect_active_high: bool) -> None:
+    # Getting this wrong inverts the reset assumption in the rendered wrapper and
+    # hands the LLM a wrong "authoritative" interface — so both directions matter.
+    data = {
+        "modules": {
+            "m": {
+                "ports": {
+                    "clk": {"direction": "input", "bits": [2]},
+                    reset_name: {"direction": "input", "bits": [3]},
+                }
+            }
+        }
+    }
+    iface = parse_write_json(data, "m")
+    assert iface.reset == reset_name
+    assert iface.reset_active_high is expect_active_high

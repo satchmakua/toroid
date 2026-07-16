@@ -46,3 +46,26 @@ def test_falsified_property_gets_a_counterexample_section() -> None:
 def test_report_states_the_honesty_caveat() -> None:
     md = render_report(_iface(), [])
     assert "not an" in md and "unbounded proof" in md
+
+
+def test_error_result_shows_its_compile_diagnostics() -> None:
+    # discharge attaches the compile-gate errors to ERROR results; a bare ERROR row
+    # with no explanation is useless to the user.
+    results = [
+        PropertyResult("PE", Verdict.ERROR, "bad property", detail="syntax error near 'foo'")
+    ]
+    md = render_report(_iface(), results)
+    assert "## Errors" in md
+    assert "syntax error near 'foo'" in md
+
+
+def test_footer_does_not_claim_a_solver_run_for_error_or_inconclusive() -> None:
+    # THE honesty rule, applied to the report's own prose: ERROR never reached a solver
+    # and INCONCLUSIVE never decided, so the blanket "tied to a solver run" must not
+    # stand unqualified when either is present.
+    for verdict in (Verdict.ERROR, Verdict.INCONCLUSIVE):
+        md = render_report(_iface(), [PropertyResult("PX", verdict, "x")])
+        assert "not** solver verdicts" in md, verdict
+    # ...and with only real solver verdicts, the caveat is not added as noise.
+    clean = render_report(_iface(), [PropertyResult("P1", Verdict.PROVEN, "ok")])
+    assert "not** solver verdicts" not in clean

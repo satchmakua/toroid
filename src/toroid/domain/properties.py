@@ -38,7 +38,12 @@ class Property:
     summary: str  # one-line human description
     expr: str  # the Yosys-subset boolean expression
     rationale: str = ""  # why it follows from the spec/interface (provenance)
-    clocked: bool = True  # rendered inside always @(posedge clk)
+    # NOTE: currently advisory only. `render/checker.py` emits every property as an
+    # immediate assertion inside the single `always @(posedge clk)` block — the
+    # universally supported open-frontend idiom (§4.1) — so `clocked=False` is *not*
+    # honored today. Kept because the property set round-trips through JSON/the LLM
+    # schema; making it meaningful means teaching the renderer an unclocked form.
+    clocked: bool = True
     origin: Origin = "llm"
 
 

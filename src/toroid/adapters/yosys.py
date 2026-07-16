@@ -53,7 +53,8 @@ class YosysAdapter(Protocol):
 
 _CLOCK_HINTS = ("clk", "clock", "clkin")
 _RESET_HINTS = ("rst", "reset")
-_ACTIVE_LOW_HINTS = ("_n", "rstn", "resetn", "_b")
+#: Conventional active-low reset spellings, matched as a SUFFIX (see _is_active_low).
+_ACTIVE_LOW_SUFFIXES = ("_n", "_b", "rstn", "resetn")
 
 
 def _looks_like_clock(name: str, direction: Direction, width: int) -> bool:
@@ -67,8 +68,15 @@ def _looks_like_reset(name: str, direction: Direction, width: int) -> bool:
 
 
 def _is_active_low(name: str) -> bool:
-    n = name.lower()
-    return n.endswith("_n") or n.endswith("n") and any(h in n for h in _RESET_HINTS)
+    """True for the conventional active-low reset spellings: `rst_n`, `reset_n`,
+    `rst_b`, `rstn`, `resetn`.
+
+    Suffix-anchored on purpose. A name that merely *ends in* "n" — `rst_in`,
+    `reset_in` — is an active-HIGH reset; treating it as active-low inverts the reset
+    assumption in the rendered wrapper and hands the LLM a wrong "authoritative"
+    interface, so this must not over-fire.
+    """
+    return name.lower().endswith(_ACTIVE_LOW_SUFFIXES)
 
 
 def parse_write_json(data: dict[str, Any], top: str) -> ModuleInterface:

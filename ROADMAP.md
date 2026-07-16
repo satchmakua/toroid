@@ -12,10 +12,11 @@ The milestone checklist.
 > DESIGN's first milestone needs the OSS CAD Suite toolchain, which is Linux-native
 > — so M0 here is everything that runs *without* it.
 >
-> **Toolchain note:** M1 onward require Yosys + SymbiYosys + Bitwuzla on PATH (OSS
-> CAD Suite; WSL2 on Windows). Keep toolchain-dependent (`sby`-shelling) tests gated
-> so they **skip** cleanly when the toolchain is absent — unit tests stay green
-> everywhere.
+> **Toolchain note:** M1 onward need **a Yosys** — which `pip install -e ".[dev]"`
+> provides via `yowasp-yosys` (WASM), so the whole yosys-sat path runs anywhere,
+> Windows included, with no OSS CAD Suite. Only the **`sby` backend** needs the full
+> OSS CAD Suite (SymbiYosys + Bitwuzla) on PATH. Keep `sby`-shelling tests gated so
+> they **skip** cleanly when it's absent — unit tests stay green everywhere.
 
 ---
 
@@ -40,8 +41,7 @@ The milestone checklist.
   FALSIFIED with a `.vcd`. ✅ **Confirmed live** (yosys-sat via yowasp, Windows):
   `pytest -m integration` green; CLI reports P1/P2 PROVEN and the bad property
   FALSIFIED with a real waveform.
-  _Caveat: the `sby` + Bitwuzla backend is code-complete and unit-tested but its
-  live run still awaits an OSS CAD Suite install (its integration tests skip)._
+  _(The `sby` + Bitwuzla backend is now live and green in CI too — see H2.)_
 
 ## Phase 2 — Property synthesis (the credibility milestone)
 

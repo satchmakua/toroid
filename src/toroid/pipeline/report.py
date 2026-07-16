@@ -54,10 +54,33 @@ def render_report(interface: ModuleInterface, results: Sequence[PropertyResult])
                 lines.append(r.detail)
                 lines.append("```")
 
+    # A compile-gate failure carries its diagnostics in `detail`; surface them, or the
+    # user gets a bare ERROR row with no way to see what went wrong.
+    errored = [r for r in results if r.verdict is Verdict.ERROR and r.detail]
+    if errored:
+        lines.append("")
+        lines.append("## Errors")
+        for r in errored:
+            lines.append("")
+            lines.append(f"### `{r.pid}` — {r.summary}")
+            lines.append("")
+            lines.append("```")
+            lines.append(r.detail)
+            lines.append("```")
+
     lines.append("")
     lines.append(
-        "_Every verdict above is tied to a solver run. "
-        "BOUNDED-PASS means no counterexample within the depth bound — not an "
-        "unbounded proof._"
+        "_Every PROVEN / BOUNDED-PASS / FALSIFIED / VACUOUS verdict above is tied to a "
+        "real solver run — never to a model's say-so. BOUNDED-PASS means no "
+        "counterexample within the depth bound, not an unbounded proof._"
     )
+    # Don't let the line above overclaim: these two verdicts never came from a solver.
+    if any(r.verdict in (Verdict.ERROR, Verdict.INCONCLUSIVE) for r in results):
+        lines.append("")
+        lines.append(
+            "_ERROR and INCONCLUSIVE are **not** solver verdicts: ERROR means the "
+            "property never reached a solver (it failed the compile gate), and "
+            "INCONCLUSIVE means the solver was cut off (timeout / resource limit) "
+            "without deciding._"
+        )
     return "\n".join(lines) + "\n"

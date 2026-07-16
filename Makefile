@@ -4,7 +4,7 @@
 # Note: the buggy-FIFO and impostor-equivalence targets are EXPECTED to exit non-zero —
 # a FALSIFIED verdict is a real failure signal, and catching it is the whole point. The
 # `-` prefix lets the demo continue so you see every artifact.
-.PHONY: help install demo test integration lint typecheck check clean
+.PHONY: help install demo test integration lint typecheck check chart clean
 
 help:
 	@echo "make install     - pip install -e .[dev]  (includes yowasp-yosys)"
@@ -12,6 +12,7 @@ help:
 	@echo "make test        - unit tests (fast, offline)"
 	@echo "make integration - live end-to-end (real proofs via Yosys; sby if present)"
 	@echo "make check       - lint + typecheck + unit tests"
+	@echo "make chart       - regenerate the README's bug-catch chart (needs .[bench])"
 	@echo "make clean       - remove build/solver artifacts"
 
 install:
@@ -42,6 +43,15 @@ typecheck:
 	mypy
 
 check: lint typecheck test
+
+# The README embeds docs/img/bugcatch.png, but the generator writes to the gitignored
+# benchmarks/out/. Without this target the committed image silently drifts from the code
+# that makes it (it did: it kept the pre-rename title). Regenerate AND install it here.
+chart:
+	pip install -e ".[bench]"
+	python -m benchmarks.bugcatch
+	cp benchmarks/out/bugcatch.png docs/img/bugcatch.png
+	@echo "installed docs/img/bugcatch.png (commit it if it changed)"
 
 clean:
 	rm -rf designs/_build benchmarks/out .pytest_cache .mypy_cache .hypothesis
