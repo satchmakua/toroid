@@ -54,7 +54,6 @@ def _demo_interface() -> ModuleInterface:
         ),
         clock="clk",
         reset="rst",
-        internal_signals=(),
     )
 
 
@@ -329,10 +328,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--backend", choices=("auto", "sby", "yosys-sat"), default="auto",
         help="discharge backend. 'sby' (SymbiYosys+Bitwuzla, needs the OSS CAD Suite) "
         "honors assume cells and discharges covers, so it can prove assume-dependent "
-        "properties and catch VACUOUS passes — but its counterexamples are reported as a "
-        "trace-file path, without the inline cycle table. 'yosys-sat' (built-in minisat, "
-        "Yosys-only) ignores assume cells (ADR-0004) but narrates counterexamples "
-        "cycle-by-cycle. auto picks sby when it is on PATH, else yosys-sat.",
+        "properties and catch VACUOUS passes. 'yosys-sat' (built-in minisat, Yosys-only) "
+        "needs no external solver but ignores assume cells (ADR-0004). Both narrate "
+        "counterexamples cycle-by-cycle. auto picks sby when it is on PATH, else "
+        "yosys-sat.",
     )
     p_verify.add_argument("--no-llm", action="store_true", help="use a hand-written property file")
     p_verify.add_argument("--props", help="property file (JSON); default: <top>.props.json")

@@ -22,6 +22,12 @@ and checks RTL-to-RTL equivalence, all on a real solver. The LLM synthesis path 
 live against `claude-opus-4-8` and is replayed from a recorded fixture in CI. See
 [ROADMAP.md](ROADMAP.md) for the plan.
 
+**The whole thing in one screen** — the injected FIFO bug, caught by a real solver, with
+the failing cycle narrated (`make demo`; regenerate with `make screenshot`, which paints
+the command's actual stdout — nothing here is typed by hand):
+
+![toroid verify on the buggy FIFO: F1 falsified with a counterexample, F2 proven](docs/img/demo.png)
+
 ---
 
 ## See it work
@@ -109,10 +115,10 @@ The honest limits, so the claims above aren't read wider than they are:
 - **Small, single-clock modules.** Counter/FIFO/arbiter scale (≲500 lines). No multi-clock
   or CDC, no full-chip, no industrial IP.
 - **Safety properties only** — no liveness or fairness.
-- **The two backends trade off, and neither is strictly better.** `yosys-sat` narrates
-  counterexamples cycle-by-cycle but **ignores `assume` cells** (ADR-0004). `sby` honors
-  assumptions and catches vacuity, but reports a counterexample as a trace-file path
-  **without** the inline cycle table (the `.yw`/VCD reader is still a stub).
+- **The lightweight backend ignores assumptions.** `yosys-sat` (the pip-only default)
+  **ignores `assume` cells** (ADR-0004), so assume-dependent properties can't be proven
+  and covers aren't discharged — use `--backend sby` for those. Both backends narrate
+  counterexamples cycle-by-cycle.
 - **It never edits your RTL.** An `rtl_bug` verdict is terminal: Toroid diagnoses and
   pinpoints, it does not rewrite the design under test.
 - **LLM synthesis is non-deterministic.** A live re-run may propose a different (still

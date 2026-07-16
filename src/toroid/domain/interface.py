@@ -7,7 +7,7 @@ directions, real widths.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 Direction = Literal["input", "output", "inout"]
@@ -41,7 +41,6 @@ class ModuleInterface:
     clock: str | None = None
     reset: str | None = None
     reset_active_high: bool = True
-    internal_signals: tuple[str, ...] = field(default_factory=tuple)
 
     def inputs(self) -> tuple[Port, ...]:
         return tuple(p for p in self.ports if p.direction == "input")

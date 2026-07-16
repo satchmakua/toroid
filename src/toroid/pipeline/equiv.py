@@ -20,7 +20,11 @@ from toroid.domain.trace import summarize_trace
 from toroid.domain.verdicts import PropertyResult, RawOutcome, Verdict
 from toroid.render.equiv import render_equiv_wrapper
 
-ENGINE = "yosys-sat"
+#: The sby backend writes this verbatim into the `.sby` `[engines]` section, so it has
+#: to be a real engine spec (a backend *name* like "yosys-sat" would emit an invalid
+#: file). The yosys-sat backend ignores it and reports its own label, so this one
+#: default — the same as `pipeline.discharge` — is correct on both backends.
+ENGINE = "smtbmc bitwuzla"
 TOP = "equiv_fv"
 
 
@@ -84,7 +88,6 @@ def check_equivalence(
         depth=depth,
         falsified=bmc.status == "fail",
         error=bmc.status == "error" or prove.status == "error",
-        inconclusive=bmc.status in ("unknown", "timeout") and prove.status != "pass",
     )
     verdict = decide_verdict(outcome)
 

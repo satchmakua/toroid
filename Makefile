@@ -4,7 +4,7 @@
 # Note: the buggy-FIFO and impostor-equivalence targets are EXPECTED to exit non-zero —
 # a FALSIFIED verdict is a real failure signal, and catching it is the whole point. The
 # `-` prefix lets the demo continue so you see every artifact.
-.PHONY: help install demo test integration lint typecheck check chart clean
+.PHONY: help install demo test integration lint typecheck check chart screenshot clean
 
 help:
 	@echo "make install     - pip install -e .[dev]  (includes yowasp-yosys)"
@@ -13,6 +13,7 @@ help:
 	@echo "make integration - live end-to-end (real proofs via Yosys; sby if present)"
 	@echo "make check       - lint + typecheck + unit tests"
 	@echo "make chart       - regenerate the README's bug-catch chart (needs .[bench])"
+	@echo "make screenshot  - regenerate the README's demo screenshot (needs .[bench])"
 	@echo "make clean       - remove build/solver artifacts"
 
 install:
@@ -52,6 +53,13 @@ chart:
 	python -m benchmarks.bugcatch
 	cp benchmarks/out/bugcatch.png docs/img/bugcatch.png
 	@echo "installed docs/img/bugcatch.png (commit it if it changed)"
+
+# Renders docs/img/demo.png by RUNNING the demo and painting its real stdout — so the
+# README's hero image can't drift from what the tool actually prints.
+screenshot:
+	pip install -e ".[bench]"
+	python -m benchmarks.screenshot
+	@echo "installed docs/img/demo.png (commit it if it changed)"
 
 clean:
 	rm -rf designs/_build benchmarks/out .pytest_cache .mypy_cache .hypothesis

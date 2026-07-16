@@ -46,3 +46,7 @@ benchmarks/out/
 *.vcd
 *.yw
 *.smt2
+# ...except witnesses deliberately captured from a live solver run and committed as
+# test fixtures (tests/unit/test_witness.py parses these).
+!tests/fixtures/*.vcd
+!tests/fixtures/*.yw

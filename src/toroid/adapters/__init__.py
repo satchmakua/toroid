@@ -25,14 +25,6 @@ class ToolchainStatus:
     def ready(self) -> bool:
         return self.yosys and self.sby
 
-    def missing(self) -> tuple[str, ...]:
-        out: list[str] = []
-        if not self.yosys:
-            out.append("yosys")
-        if not self.sby:
-            out.append("sby")
-        return tuple(out)
-
 
 def toolchain_status() -> ToolchainStatus:
     """Detect the open formal toolchain on PATH (the OSS CAD Suite ships both)."""

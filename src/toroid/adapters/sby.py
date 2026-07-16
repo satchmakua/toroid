@@ -24,9 +24,10 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from toroid.adapters import ToolchainError, toolchain_status
+from toroid.adapters.witness import parse_vcd
 from toroid.domain.trace import Trace
 
-SbyMode = Literal["bmc", "prove", "cover", "live"]
+SbyMode = Literal["bmc", "prove", "cover"]  # sby also has "live"; unused (safety only)
 SbyStatus = Literal["pass", "fail", "unknown", "error", "timeout"]
 
 
@@ -177,9 +178,14 @@ class SbyCli:
     def parse_trace(
         self, result: SbyRunResult, signal_names: Sequence[str]
     ) -> Trace | None:
-        # Structured .yw/VCD witness parsing for the sby backend lands later; the
-        # report still links the on-disk trace_vcd. (yosys-sat parses its model.)
-        return None
+        # sby writes a VCD per engine run; parse it into the same Trace the yosys-sat
+        # backend produces, so a FALSIFIED verdict here narrates cycle-by-cycle too.
+        if result.status != "fail" or result.trace_vcd is None:
+            return None
+        if not result.trace_vcd.exists():
+            return None
+        trace = parse_vcd(result.trace_vcd, signal_names)
+        return trace if trace.steps else None
 
 
 def _resolve_traces(result: SbyRunResult, outdir: Path) -> SbyRunResult:

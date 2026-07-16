@@ -14,11 +14,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from toroid.domain.properties import Property, PropertyKind, PropertySet
+from toroid.domain.properties import Origin, Property, PropertyKind, PropertySet
 
 _VALID_KINDS = {k.value for k in PropertyKind}
+_VALID_ORIGINS: set[str] = {"llm", "human", "refined"}  # must match domain Origin
 
 
 def property_from_dict(d: dict[str, Any]) -> Property:
@@ -28,6 +29,12 @@ def property_from_dict(d: dict[str, Any]) -> Property:
             f"property {d.get('pid')!r}: unknown kind {kind!r} "
             f"(expected one of {sorted(_VALID_KINDS)})"
         )
+    origin = str(d.get("origin", "human"))
+    if origin not in _VALID_ORIGINS:
+        raise ValueError(
+            f"property {d.get('pid')!r}: unknown origin {origin!r} "
+            f"(expected one of {sorted(_VALID_ORIGINS)})"
+        )
     return Property(
         pid=str(d["pid"]),
         kind=PropertyKind(kind),
@@ -35,7 +42,7 @@ def property_from_dict(d: dict[str, Any]) -> Property:
         expr=str(d["expr"]),
         rationale=str(d.get("rationale", "")),
         clocked=bool(d.get("clocked", True)),
-        origin=d.get("origin", "human"),
+        origin=cast(Origin, origin),
     )
 
 

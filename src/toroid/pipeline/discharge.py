@@ -139,7 +139,6 @@ def discharge_assert(
 
     falsified = bmc.status == "fail" or (prove.status == "fail" and prove.basecase_failed)
     errored = bmc.status == "error" or prove.status == "error"
-    inconclusive = bmc.status in ("unknown", "timeout") and prove.status != "pass"
 
     outcome = RawOutcome(
         bmc_pass=bmc.status == "pass",
@@ -149,11 +148,11 @@ def discharge_assert(
         depth=depth,
         falsified=falsified,
         error=errored,
-        inconclusive=inconclusive,
     )
     verdict = decide_verdict(outcome)
 
-    engine, used_depth, vcd, yw, detail = _attribute(verdict, bmc, prove, pdr)
+    engine, used_depth, vcd, yw = _attribute(verdict, bmc, prove, pdr)
+    detail = ""
 
     # On a counterexample, parse the trace and attach a deterministic narration.
     trace = None
@@ -183,17 +182,17 @@ def _attribute(
     bmc: SbyRunResult,
     prove: SbyRunResult,
     pdr: SbyRunResult | None,
-) -> tuple[str | None, int | None, Path | None, Path | None, str]:
+) -> tuple[str | None, int | None, Path | None, Path | None]:
     """Pick the engine/depth/trace that produced the verdict (engine label comes
     from the run that actually decided it, so it's accurate per backend)."""
     if verdict is Verdict.FALSIFIED:
         src = bmc if bmc.status == "fail" else prove
-        return src.engine, src.depth, src.trace_vcd, src.trace_yw, ""
+        return src.engine, src.depth, src.trace_vcd, src.trace_yw
     if verdict is Verdict.PROVEN:
         if prove.status == "pass":
-            return prove.engine, None, None, None, ""
+            return prove.engine, None, None, None
         if pdr is not None and pdr.status == "pass":
-            return pdr.engine, None, None, None, ""
+            return pdr.engine, None, None, None
     if verdict is Verdict.BOUNDED_PASS:
-        return bmc.engine, bmc.depth, None, None, ""
-    return None, bmc.depth, None, None, ""
+        return bmc.engine, bmc.depth, None, None
+    return None, bmc.depth, None, None

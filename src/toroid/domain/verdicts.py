@@ -41,7 +41,9 @@ class RawOutcome:
     depth: int = 0
     falsified: bool = False
     error: bool = False
-    inconclusive: bool = False
+    # NOTE: there is deliberately no `inconclusive` flag. INCONCLUSIVE is what's left
+    # when nothing else was established, so `decide_verdict` derives it rather than
+    # trusting a caller-supplied claim — one less way to assert an unearned verdict.
 
 
 @dataclass(frozen=True, slots=True)

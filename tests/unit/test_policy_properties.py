@@ -22,7 +22,6 @@ _outcomes = st.builds(
     depth=st.integers(min_value=0, max_value=64),
     falsified=st.booleans(),
     error=st.booleans(),
-    inconclusive=st.booleans(),
 )
 
 

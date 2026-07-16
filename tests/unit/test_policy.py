@@ -47,7 +47,8 @@ def test_compile_error_short_circuits_to_error() -> None:
 
 
 def test_nothing_resolved_is_inconclusive() -> None:
-    assert decide_verdict(RawOutcome(inconclusive=True)) is Verdict.INCONCLUSIVE
+    # INCONCLUSIVE is *derived* from nothing having been established — there is no
+    # caller-supplied flag to assert it.
     assert decide_verdict(RawOutcome()) is Verdict.INCONCLUSIVE
 
 
