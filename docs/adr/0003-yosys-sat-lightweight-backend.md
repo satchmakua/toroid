@@ -45,6 +45,6 @@ FAIL!`.
 - **Two engines to keep working.** The `SbyJobRunner` abstraction keeps the
   composition (`discharge`) shared; only the per-run shell + output parser differ.
 - **WASM sandbox constraint:** yowasp-yosys mounts only the CWD, so paths must be
-  CWD-relative and `inductor` is run from the project root. Native Yosys is unaffected.
+  CWD-relative and `toroid` is run from the project root. Native Yosys is unaffected.
 - The two backends should not diverge in verdict semantics — both feed the same
   `decide_verdict`. If they ever disagree on a property, that's a bug to chase.

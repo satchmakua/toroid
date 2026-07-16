@@ -5,7 +5,7 @@
 
 ## Context
 
-Inductor model-checks Verilog with the open formal stack (Yosys + SymbiYosys). The
+Toroid model-checks Verilog with the open formal stack (Yosys + SymbiYosys). The
 synthesized properties have to be expressed in a language Yosys can actually
 elaborate. There are two paths:
 
@@ -33,7 +33,7 @@ solver. Full SVA via Verific is a documented roadmap upgrade, never a v1 depende
 ## Consequences
 
 - **Free and reproducible.** No commercial license; anyone can run the whole flow
-  from the OSS CAD Suite. Inductor's own license (MIT) stays unencumbered.
+  from the OSS CAD Suite. Toroid's own license (MIT) stays unencumbered.
 - **Honest scope.** Multi-cycle behavior is expressed with `$past`/`$rose`/etc. —
   expressive enough for the v1 property classes (no-overflow, FSM invariants,
   handshake correctness) but not arbitrary temporal SVA. Stated plainly as a non-goal.

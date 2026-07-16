@@ -103,8 +103,9 @@ verification you need a model checker — pick one:
   WebAssembly. Drives the built-in `sat` backend (internal minisat, no external
   solver). This is what the dev install (`.[dev]`) pulls in.
 - **Full stack:** the **OSS CAD Suite** (Yosys + SymbiYosys + Bitwuzla) on PATH —
-  https://github.com/YosysHQ/oss-cad-suite-build — for the `sby` backend. Linux-native;
-  **on Windows use WSL2**.
+  https://github.com/YosysHQ/oss-cad-suite-build — for the `sby` backend, which honors
+  `assume` cells and discharges covers (see ADR-0004). Linux is the supported path (it's
+  what CI runs; use WSL2 on Windows); the native Windows build also works.
 
 The offline `demo` and the unit tests need neither.
 
@@ -112,6 +113,10 @@ The offline `demo` and the unit tests need neither.
 python -m venv .venv && source .venv/Scripts/activate   # Windows Git Bash
                                                         # (Linux/macOS: .venv/bin/activate)
 pip install -e ".[dev]"     # once (includes yowasp-yosys)
+
+make demo                   # ONE COMMAND: prove real RTL, catch a real bug with a
+                            # counterexample, and check equivalence. No key, no OSS CAD
+                            # Suite. (`make check` = lint + typecheck + tests.)
 
 toroid demo               # offline showcase: render a wrapper + a sample report
 # Verify real RTL (run from the repo root; yowasp-yosys is sandboxed to the CWD):

@@ -36,6 +36,10 @@ jobs:
       - name: Integration (real proofs via yosys-sat + recorded-LLM replay)
         run: pytest -m integration
 
+      # The documented one-command showcase must actually work on a cold clone.
+      - name: Demo (make demo)
+        run: make demo
+
   # The full sby + Bitwuzla path via the OSS CAD Suite (Linux). Un-skips the sby-gated
   # integration tests: it proves an assume-dependent property (the ADR-0004 lift) and
   # catches a vacuous pass — neither of which the lightweight yosys-sat backend can do.
