@@ -1,7 +1,5 @@
 # Toroid
 
-*(formerly Inductor)*
-
 > **AI that writes and proves correctness properties for chips.**
 
 Toroid reads a spec and a small RTL module, synthesizes formal properties with an
