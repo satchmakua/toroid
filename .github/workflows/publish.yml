@@ -1,0 +1,31 @@
+name: Publish to PyPI
+
+# Publishes to PyPI via Trusted Publishing (OIDC) — no API token required.
+# Fires when you publish a GitHub Release, or manually from the Actions tab.
+# The version published is whatever is in pyproject.toml at that commit; bump it
+# before each release or PyPI will reject the upload as a duplicate.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # required: mints the OIDC token PyPI trusts
+      contents: read    # required: for actions/checkout
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
