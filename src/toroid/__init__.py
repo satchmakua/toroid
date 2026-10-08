@@ -7,7 +7,7 @@ the build loop deepens the pipeline milestone by milestone (see ROADMAP.md).
 
 from __future__ import annotations
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 from toroid.domain.interface import ModuleInterface, Port
 from toroid.domain.policy import decide_verdict
